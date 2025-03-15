@@ -66,13 +66,13 @@ def test_dates(template_renderer: TemplateRenderer) -> None:
     assert template_renderer.render_dates([date(2023, 1, 1)]) == "1/1/2023"
     assert (
         template_renderer.render_dates([date(2023, 1, 1), date(2023, 1, 2)])
-        == "1–2/1/2023"
+        == "1–2/1/2023"  # noqa: RUF001
     )
     assert (
         template_renderer.render_dates([date(2023, 1, 31), date(2023, 2, 1)])
-        == "31/1–1/2/2023"
+        == "31/1–1/2/2023"  # noqa: RUF001
     )
     assert (
         template_renderer.render_dates([date(2023, 12, 31), date(2024, 1, 1)])
-        == "31/12/2023–1/1/2024"
+        == "31/12/2023–1/1/2024"  # noqa: RUF001
     )

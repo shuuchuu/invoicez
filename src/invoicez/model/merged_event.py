@@ -6,7 +6,7 @@ from .duration import Duration
 
 
 class MergedEvent(BaseModel):
-    model_config = dict(use_enum_values=True)
+    model_config = {"use_enum_values": True}
     company: str
     training: str
     place: str

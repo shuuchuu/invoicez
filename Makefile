@@ -1,6 +1,9 @@
 check:
-	black --check invoicez tests
-	isort --check-only invoicez tests
-	mypy invoicez tests
-	flake8 --count invoicez tests
-	pylint invoicez tests
+	ruff check
+	mypy src tests
+	pytest
+
+install:
+	ln -fs ../../pre-commit-hook .git/hooks/pre-commit
+
+.PHONY: check

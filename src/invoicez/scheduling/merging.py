@@ -1,8 +1,8 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from ..config.paths import Paths
 from ..config.settings import Settings
-from ..exceptions import InvoicezException
+from ..exceptions import InvoicezError
 from ..model.event import Event
 from ..model.merged_event import MergedEvent
 
@@ -19,9 +19,8 @@ class Merger:
             key = (event.company, event.training, event.place, event.extra)
             if event.continuation:
                 if key not in current_events:
-                    raise InvoicezException(
-                        f"Found follow-up event {event} without root event."
-                    )
+                    msg = f"Found follow-up event {event} without root event."
+                    raise InvoicezError(msg)
                 current_events[key].starts.append(event.start)
                 current_events[key].durations.append(event.duration)
             else:

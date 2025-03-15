@@ -1,5 +1,5 @@
+from collections.abc import Iterable, Sequence
 from logging import getLogger
-from typing import Iterable, Sequence
 
 from rich.console import Console
 from rich.prompt import Confirm, Prompt

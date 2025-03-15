@@ -7,7 +7,7 @@ from yaml import safe_load
 
 from ..config.paths import Paths
 from ..config.settings import Settings
-from ..exceptions import InvoicezException
+from ..exceptions import InvoicezError
 from ..model.data import Company, Rate, Training
 from ..model.duration import DurationUnit
 from ..model.invoice import GcalInfo, Invoice, Item
@@ -68,14 +68,13 @@ class Biller:
         )
 
     def _get_from_config(
-        self, type: Literal["trainings", "companies", "rates"], value: str
+        self, category: Literal["trainings", "companies", "rates"], value: str
     ) -> Training | Company | Rate:
         try:
-            return getattr(self._settings, type)[value]
-        except KeyError:
-            raise InvoicezException(
-                f"The value {value} could not be found in {type} config."
-            )
+            return getattr(self._settings, category)[value]
+        except KeyError as e:
+            msg = f"The value {value} could not be found in {category} config."
+            raise InvoicezError(msg) from e
 
     def _produce_main_items(
         self, merged_event: MergedEvent, company: Company, training: Training
@@ -83,10 +82,9 @@ class Biller:
         training = self._settings.trainings[merged_event.training]
         try:
             rates = self._settings.rates[training.rate]
-        except KeyError:
-            raise InvoicezException(
-                f"The rate named “{training.rate}” was not found in the settings."
-            )
+        except KeyError as e:
+            msg = f"The rate named “{training.rate}” was not found in the settings."
+            raise InvoicezError(msg) from e
 
         items = []
 
@@ -123,7 +121,9 @@ class Biller:
         return Item(
             dates=self._template_renderer.render_dates(
                 (start + timedelta(days=i)).date()
-                for start, duration in zip(merged_event.starts, merged_event.durations)
+                for start, duration in zip(
+                    merged_event.starts, merged_event.durations, strict=True
+                )
                 for i in range(duration.n)
             ),
             n=sum(duration.n for duration in merged_event.durations),
@@ -153,7 +153,9 @@ class Biller:
         result = merged_event.model_copy()
         result.starts = [
             start
-            for start, duration in zip(merged_event.starts, merged_event.durations)
+            for start, duration in zip(
+                merged_event.starts, merged_event.durations, strict=True
+            )
             if duration.unit is duration_unit
         ]
         if not result.starts:

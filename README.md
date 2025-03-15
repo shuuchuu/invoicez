@@ -1,7 +1,5 @@
 # `invoicez`
 
-[![CI Status](https://img.shields.io/github/workflow/status/m09/invoicez/CI?label=CI&style=for-the-badge)](https://github.com/m09/invoicez/actions?query=workflow%3ACI)
-[![CD Status](https://img.shields.io/github/workflow/status/m09/invoicez/CD?label=CD&style=for-the-badge)](https://github.com/m09/invoicez/actions?query=workflow%3ACD)
 [![Test Coverage](https://img.shields.io/codecov/c/github/m09/invoicez?style=for-the-badge)](https://codecov.io/gh/m09/invoicez)
 [![PyPI Project](https://img.shields.io/pypi/v/invoicez?style=for-the-badge)](https://pypi.org/project/invoicez/)
 

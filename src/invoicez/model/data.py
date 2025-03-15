@@ -2,14 +2,14 @@ from pydantic import BaseModel
 
 
 class Rate(BaseModel):
-    model_config = dict(extra="allow")
+    model_config = {"extra": "allow"}
 
     training_day: int
     preparation_day: int
 
 
 class Company(BaseModel):
-    model_config = dict(extra="allow")
+    model_config = {"extra": "allow"}
 
     name: str
     siren: str
@@ -18,7 +18,7 @@ class Company(BaseModel):
 
 
 class Training(BaseModel):
-    model_config = dict(extra="allow")
+    model_config = {"extra": "allow"}
 
     name: str
     short_name: str

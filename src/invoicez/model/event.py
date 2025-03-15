@@ -1,13 +1,11 @@
 from datetime import datetime
-from re import VERBOSE as re_VERBOSE
-from re import Pattern
+from re import VERBOSE, Pattern
 from re import compile as re_compile
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, StringConstraints
-from typing_extensions import Annotated
 
-from invoicez.exceptions import InvoicezException
+from invoicez.exceptions import InvoicezError
 
 from .duration import Duration, DurationUnit
 
@@ -30,7 +28,7 @@ class Title(BaseModel):
 
 
 class Event(BaseModel):
-    model_config = dict(use_enum_values=True)
+    model_config = {"use_enum_values": True}
     continuation: bool
     company: StrippedLowercaseStr
     training: StrippedLowercaseStr
@@ -65,15 +63,16 @@ class Event(BaseModel):
 
     @staticmethod
     def compile_pattern(pattern: str) -> Pattern:
-        compiled_pattern = re_compile(pattern, re_VERBOSE)
+        compiled_pattern = re_compile(pattern, VERBOSE)
         missing_fields = title_pattern_required_fields.difference(
             compiled_pattern.groupindex.keys()
         )
 
         if missing_fields:
-            raise InvoicezException(
+            msg = (
                 f"Title pattern doesn't contain the necessary fields {missing_fields}."
             )
+            raise InvoicezError(msg)
         return compiled_pattern
 
     @staticmethod
@@ -97,7 +96,7 @@ class Event(BaseModel):
 
     @staticmethod
     def _process_dates(gcal_event: dict[str, Any]) -> tuple[datetime, Duration]:
-        next(iter(gcal_event.get("start").values()))
+        next(iter(gcal_event["start"].values()))
         key = "dateTime" if "dateTime" in gcal_event["start"] else "date"
         start_datetime = datetime.fromisoformat(gcal_event["start"][key])
         end_datetime = datetime.fromisoformat(gcal_event["end"][key])
@@ -113,8 +112,9 @@ class Event(BaseModel):
                 n=delta.seconds // (seconds_in_an_hour * 3), unit=DurationUnit.half_day
             )
         else:
-            raise InvoicezException(
+            msg = (
                 "No support for durations that are not full days or 3 hours (half a "
                 f"day). Event: {gcal_event}"
             )
+            raise InvoicezError(msg)
         return start_datetime.replace(tzinfo=None), duration

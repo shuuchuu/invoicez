@@ -1,7 +1,7 @@
+from collections.abc import Iterable, Iterator
 from datetime import date
 from shutil import copy2
 from tempfile import NamedTemporaryFile
-from typing import Iterable, Iterator
 
 from yaml import safe_dump, safe_load
 
@@ -42,6 +42,7 @@ class Mapper:
         ids = {event.id for event in merged_events}
         invalid_invoices = []
         for invoice in self._linked_gcal_invoices:
+            assert invoice.gcal_info is not None
             if invoice.gcal_info.event_id not in ids:
                 with invoice.path.open(encoding="utf8") as fh:
                     data = safe_load(fh)
@@ -58,20 +59,18 @@ class Mapper:
     ) -> list[MergedEvent]:
         result = []
         today = date.today()
-        linked_event_ids = set(
-            invoice.gcal_info.event_id for invoice in self._linked_gcal_invoices
-        )
+        linked_event_ids = set()
+        for invoice in self._linked_gcal_invoices:
+            assert invoice.gcal_info is not None
+            linked_event_ids.add(invoice.gcal_info.event_id)
         for event in (
             event for event in merged_events if event.id not in linked_event_ids
         ):
             end = max(
                 start + duration.timedelta
-                for start, duration in zip(event.starts, event.durations)
+                for start, duration in zip(event.starts, event.durations, strict=True)
             )
-            if isinstance(end, date):
-                end_date = end
-            else:
-                end_date = end.date()
+            end_date = end if isinstance(end, date) else end.date()
             if end_date <= today and end_date >= self._settings.start_date:
                 result.append(event)
         return result

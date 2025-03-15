@@ -5,7 +5,7 @@ from pytest import fixture, raises
 
 from invoicez.config.paths import Paths
 from invoicez.config.settings import Settings
-from invoicez.exceptions import InvoicezException
+from invoicez.exceptions import InvoicezError
 from invoicez.model.duration import Duration, DurationUnit
 from invoicez.model.event import Event
 from invoicez.scheduling.merging import Merger
@@ -46,14 +46,14 @@ def merger() -> Merger:
 def test_non_existing_root_events(merger: Merger) -> None:
     events = [make_event(continuation=True)]
 
-    with raises(InvoicezException):
+    with raises(InvoicezError):
         merger.merge_events(events)
 
 
 def test_root_event_after_follow_up_event(merger: Merger) -> None:
     events = [make_event(continuation=True), make_event(start_offset=1)]
 
-    with raises(InvoicezException):
+    with raises(InvoicezError):
         merger.merge_events(events)
 
 

@@ -1,3 +1,4 @@
+from contextlib import suppress
 from copy import deepcopy
 from filecmp import cmp
 from logging import getLogger
@@ -75,10 +76,8 @@ class Builder:
             if not output_path.exists() or not cmp(fh.name, str(output_path)):
                 move(fh.name, output_path)
         finally:
-            try:
+            with suppress(FileNotFoundError):
                 unlink(fh.name)
-            except FileNotFoundError:
-                pass
 
     def _compile(self, latex_path: Path, build_dir: Path) -> CompletedProcess:
         command = self._settings.latex_build_command

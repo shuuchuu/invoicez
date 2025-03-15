@@ -37,7 +37,7 @@ def test_billing(biller: Biller) -> None:
         invoice.items[0].description
         == "Day of “company 1 training 1 short name” training"
     )
-    assert invoice.items[0].dates == "1–4/1/2023"
+    assert invoice.items[0].dates == "1–4/1/2023"  # noqa: RUF001
     assert invoice.ref == "REF1"
     assert (
         invoice.description

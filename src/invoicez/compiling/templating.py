@@ -1,8 +1,9 @@
+from collections.abc import Iterable, Sequence
 from datetime import date
 from logging import getLogger
 from os.path import join as path_join
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -88,9 +89,9 @@ class TemplateRenderer:
         return f"{number:.2f}".rstrip("0").rstrip(".")
 
     @classmethod
-    def _format_dates(self, dates: Iterable[date]) -> str:
+    def _format_dates(cls, dates: Iterable[date]) -> str:
         return r"\\".join(
-            self._format_date_group(group) for group in self._group_dates(dates)
+            cls._format_date_group(group) for group in cls._group_dates(dates)
         )
 
     @classmethod
@@ -118,9 +119,8 @@ class TemplateRenderer:
         end = dates[-1]
         if start.year == end.year:
             if start.month == end.month:
-                return f"{start.day}–{end.day}/{start.month}/{start.year}"
-            return f"{start.day}/{start.month}–{end.day}/{end.month}/{start.year}"
+                return f"{start.day}–{end.day}/{start.month}/{start.year}"  # noqa: RUF001
+            return f"{start.day}/{start.month}–{end.day}/{end.month}/{start.year}"  # noqa: RUF001
         return (
-            f"{start.day}/{start.month}/{start.year}"
-            f"–{end.day}/{end.month}/{end.year}"
+            f"{start.day}/{start.month}/{start.year}–{end.day}/{end.month}/{end.year}"  # noqa: RUF001
         )

@@ -1,10 +1,10 @@
 from datetime import timedelta
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel
 
 
-class DurationUnit(str, Enum):
+class DurationUnit(StrEnum):
     day = "day"
     half_day = "half-day"
 

@@ -1,7 +1,7 @@
 from json import load
 from pathlib import Path
 from shutil import copytree
-from typing import Any, Dict, List
+from typing import Any
 
 from git import Repo
 from pytest import fixture
@@ -41,7 +41,7 @@ class FakeCalendar(Calendar):
         self.events_json = events_json
         self.title_pattern = Event.compile_pattern(settings.title_pattern)
 
-    def list_events(self) -> List[Event]:
+    def list_events(self) -> list[Event]:
         with self.events_json.open(encoding="utf8") as fh:
             events_json = load(fh)
         events = []
@@ -51,7 +51,7 @@ class FakeCalendar(Calendar):
                 events.append(event)
         return sorted(events, key=lambda e: e.start)
 
-    def list_raw_events(self) -> List[Dict[str, Any]]:
+    def list_raw_events(self) -> list[dict[str, Any]]:
         return []
 
     def edit_event_description(self, event_id: str, new_description: str) -> None:

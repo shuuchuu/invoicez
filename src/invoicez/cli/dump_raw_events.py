@@ -65,14 +65,14 @@ def dump_raw_events(output: Path, for_tests: bool = True) -> None:
                 raw_event["htmlLink"], f"HTMLLink_{len(html_links)}"
             )
             if "description" in raw_event:
-                description = safe_load(raw_event.get("description"))
+                description = safe_load(raw_event["description"])
                 if "ref" in description:
                     description["ref"] = refs.setdefault(
                         description["ref"], f"Ref_{len(refs)}"
                     )
                 event["description"] = safe_dump(description)
             for field in fields_to_keep:
-                event[field] = raw_event.get(field)
+                event[field] = raw_event[field]
             modified_events.append(event)
         raw_events = modified_events
 

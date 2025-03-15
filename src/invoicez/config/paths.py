@@ -1,12 +1,9 @@
-from logging import getLogger
 from pathlib import Path
 
 from git import Repo
 from git.exc import InvalidGitRepositoryError
 
-from ..exceptions import InvoicezException
-
-_logger = getLogger(__name__)
+from ..exceptions import InvoicezError
 
 
 class Paths:
@@ -40,14 +37,15 @@ class Paths:
         self.gcalendar_credentials = self.invoicez_dir / "gcalendar-credentials.pickle"
 
     @property
-    def git_dir(self) -> Path | None:
+    def git_dir(self) -> Path:
         if not hasattr(self, "_git_dir"):
             try:
                 repository = Repo(str(self.working_dir), search_parent_directories=True)
             except InvalidGitRepositoryError as e:
-                raise InvoicezException(
+                msg = (
                     "Could not find the path of the current git working directory. "
                     "Are you in one?"
-                ) from e
+                )
+                raise InvoicezError(msg) from e
             self._git_dir = Path(repository.git.rev_parse("--show-toplevel")).resolve()
         return self._git_dir

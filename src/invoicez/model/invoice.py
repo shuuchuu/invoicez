@@ -1,9 +1,10 @@
 """Data classes related to invoices."""
 
+from collections.abc import Iterator
 from datetime import date
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from pydantic import BaseModel
 from yaml import safe_dump, safe_load

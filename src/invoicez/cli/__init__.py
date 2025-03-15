@@ -21,9 +21,7 @@ def main() -> None:
 
 
 def _import_module_and_submodules(package_name: str) -> None:
-    """
-    From https://github.com/allenai/allennlp/blob/master/allennlp/common/util.py
-    """
+    """From https://github.com/allenai/allennlp/blob/master/allennlp/common/util.py."""
     importlib_invalidate_caches()
 
     module = import_module(package_name)

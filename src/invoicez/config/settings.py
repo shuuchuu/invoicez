@@ -11,7 +11,7 @@ _logger = getLogger(__name__)
 
 
 class Settings(BaseModel):
-    model_config = dict(extra="allow")
+    model_config = {"extra": "allow"}
 
     latex_build_command: list[str]
     start_date: date = date.min

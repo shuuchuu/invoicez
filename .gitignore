@@ -3,6 +3,7 @@ __pycache__
 .invoicez/
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
+.venv/
 build/
 dist/
-config.yml

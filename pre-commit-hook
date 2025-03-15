@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Run the make command
+if ! make; then
+    echo "Pre-commit hook: make command failed. Aborting commit."
+    exit 1
+fi
+
+# Allow commit to proceed
+exit 0

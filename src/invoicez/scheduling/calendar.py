@@ -21,19 +21,19 @@ from ..model.event import Event
 class Calendar(ABC):
     @abstractmethod
     def list_events(self) -> list[Event]:
-        raise NotImplementedError("This method should not be used.")
+        raise NotImplementedError
 
     @abstractmethod
     def list_raw_events(self) -> list[dict[str, Any]]:
-        raise NotImplementedError("This method should not be used.")
+        raise NotImplementedError
 
     @abstractmethod
     def edit_event_description(self, event_id: str, new_description: str) -> None:
-        raise NotImplementedError("This method should not be used.")
+        raise NotImplementedError
 
     @abstractmethod
     def select_calendar(self) -> None:
-        raise NotImplementedError("This method should not be used.")
+        raise NotImplementedError
 
 
 class GoogleCalendar(Calendar):
@@ -71,7 +71,7 @@ class GoogleCalendar(Calendar):
         self._service.events().patch(
             calendarId=self._selected_calendar,
             eventId=event_id,
-            body=dict(description=new_description),
+            body={"description": new_description},
         ).execute()
 
     def select_calendar(self) -> None:
