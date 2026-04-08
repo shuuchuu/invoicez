@@ -49,7 +49,7 @@ def new(path: str, name: str, dir_path: str, quote: bool) -> None:
         yaml_safe_dump(content, fh, allow_unicode=True)
 
 
-def _get_next_doc_number(paths: Paths, quote: bool) -> str:
+def _get_next_doc_number(paths: Paths, quote: bool = False) -> str:
     now = datetime.now()
     prefix = now.strftime("%Y-%m")
     n_documents = 0
