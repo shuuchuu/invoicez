@@ -1,3 +1,4 @@
+from datetime import datetime
 import sys
 from pathlib import Path
 from shutil import copytree
@@ -7,6 +8,7 @@ import appdirs
 from git import Repo
 from pdfminer.high_level import extract_pages, extract_text
 from pytest import fixture, mark
+from yaml import safe_load as yaml_safe_load
 
 
 @fixture
@@ -41,3 +43,35 @@ def test_run(
         text = extract_text(fh)
     assert len(pages) == n_pages
     assert "John Doe" in text
+
+
+def test_new_quote(working_dir: Path, monkeypatch: Any) -> None:
+    from invoicez.cli import cli
+
+    now = datetime.now()
+    prefix = now.strftime("%Y-%m")
+    path_invoice = working_dir / f"{prefix}-001.yml"
+    path_quote = working_dir / f"quote-{prefix}-001.yml"
+
+    monkeypatch.setattr(
+        sys, "argv", ["invoicez", "new", "--quote", "2020-10-001.yml", "_"]
+    )
+    try:
+        cli()
+    except SystemExit as e:
+        if e.code != 0:
+            raise e
+
+    assert path_quote.exists()
+
+    monkeypatch.setattr(sys, "argv", ["invoicez", "new", str(path_quote), "_"])
+    try:
+        cli()
+    except SystemExit as e:
+        if e.code != 0:
+            raise e
+
+    assert path_invoice.exists()
+    content = yaml_safe_load(path_invoice.read_text(encoding="utf8"))
+    assert "quote_number" in content
+    assert content["quote_number"] == f"{prefix}-001"

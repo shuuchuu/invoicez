@@ -1,4 +1,6 @@
 font_size: 11pt
+quote_template: "quote-{quote_number}"
+name_template: "{invoice_number}"
 company:
   maximum_days: 30
 user:

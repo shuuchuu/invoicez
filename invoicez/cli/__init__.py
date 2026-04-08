@@ -24,6 +24,12 @@ dir_path_option = option(
     help="Path of the working directory.",
 )
 
+quote_option = option(
+    "--quote",
+    is_flag=True,
+    help="if set, resulting yaml will be a quote not an invoice",
+)
+
 
 def _autocomplete_path(ctx: Any, args: List[str], incomplete: str) -> List[str]:
     try:
