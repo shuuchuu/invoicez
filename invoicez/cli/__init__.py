@@ -27,7 +27,7 @@ dir_path_option = option(
 quote_option = option(
     "--quote",
     is_flag=True,
-    help="if set, resulting yaml will be a quote not an invoice",
+    help="If set, resulting yaml will be a quote not, an invoice.",
 )
 
 
