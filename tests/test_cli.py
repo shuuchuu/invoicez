@@ -1,8 +1,8 @@
-from datetime import datetime
 import sys
+from datetime import datetime
 from pathlib import Path
 from shutil import copytree
-from typing import Any, List
+from typing import Any
 
 import appdirs
 from git import Repo
@@ -25,11 +25,11 @@ def working_dir(tmp_path: Path, monkeypatch: Any) -> Path:
 
 @mark.parametrize("args,n_pages", [(["2020-10-001.yml"], 1)])
 def test_run(
-    working_dir: Path, monkeypatch: Any, args: List[str], n_pages: int
+    working_dir: Path, monkeypatch: Any, args: list[str], n_pages: int
 ) -> None:
     from invoicez.cli import cli
 
-    monkeypatch.setattr(sys, "argv", ["invoicez", "run"] + args)
+    monkeypatch.setattr(sys, "argv", ["invoicez", "run", *args])
 
     try:
         cli()
@@ -37,9 +37,9 @@ def test_run(
         if e.code != 0:
             raise e
 
-    with open(working_dir / "pdf" / "2020-10-001.pdf", "rb") as fh:
+    with (working_dir / "pdf" / "2020-10-001.pdf").open("rb") as fh:
         pages = list(extract_pages(fh))
-    with open(working_dir / "pdf" / "2020-10-001.pdf", "rb") as fh:
+    with (working_dir / "pdf" / "2020-10-001.pdf").open("rb") as fh:
         text = extract_text(fh)
     assert len(pages) == n_pages
     assert "John Doe" in text

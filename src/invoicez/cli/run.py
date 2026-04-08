@@ -1,14 +1,14 @@
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from invoicez.cli import command, dir_path_option, option, path_argument
 from invoicez.paths import Paths
 from invoicez.runner import run as runner_run
 
 
-def _autocomplete_template(ctx: Any, args: List[str], incomplete: str) -> List[str]:
+def _autocomplete_template(ctx: Any, args: list[str], incomplete: str) -> list[str]:
     try:
-        paths = Paths(Path("."))
+        paths = Paths(Path())
         return [
             t.with_suffix("").with_suffix("").name
             for t in paths.jinja2_dir.glob("*.tex.jinja2")

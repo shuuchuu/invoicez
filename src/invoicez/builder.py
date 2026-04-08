@@ -1,24 +1,21 @@
 from copy import deepcopy
-from filecmp import cmp
 from logging import getLogger
 from multiprocessing import Pool
-from os import unlink
 from os.path import join as path_join
 from pathlib import Path
-from shutil import copyfile, move
+from shutil import copyfile
 from subprocess import CompletedProcess, run
-from tempfile import NamedTemporaryFile
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
-from invoicez.exceptions import InvoicezException
+from invoicez.exceptions import InvoicezError
 from invoicez.paths import Paths
 from invoicez.target import Target
 
 
 class Builder:
-    def __init__(self, target: Target, config: Dict[str, Any], paths: Paths):
+    def __init__(self, target: Target, config: dict[str, Any], paths: Paths):
         self._target = target
         self._config = config
         self._paths = paths
@@ -29,8 +26,10 @@ class Builder:
         to_compile = [self._target]
         with Pool(1) as pool:
             completed_processes = pool.map(self._build, to_compile)
-        for completed_process, target in zip(completed_processes, to_compile):
-            compilation = "%s/%s" % (target.name, target.template_name)
+        for completed_process, target in zip(
+            completed_processes, to_compile, strict=True
+        ):
+            compilation = f"{target.name}/{target.template_name}"
             if completed_process.returncode != 0:
                 self._logger.warning("Compilation %s errored", compilation)
                 self._logger.warning(
@@ -44,7 +43,7 @@ class Builder:
         return self._target.name
 
     def _build(
-        self, target: Optional[Target], copy_result: bool = True
+        self, target: Target | None, copy_result: bool = True
     ) -> CompletedProcess:
         build_dir = self._setup_build_dir()
         filename = self._get_filename()
@@ -82,17 +81,12 @@ class Builder:
             **self._config["company"],
             **self._config["companies"][self._target.data["company"]],
         }
-        try:
-            with NamedTemporaryFile("w", encoding="utf8", delete=False) as fh:
-                fh.write(template.render(**context))
-                fh.write("\n")
-            if not output_path.exists() or not cmp(fh.name, str(output_path)):
-                move(fh.name, output_path)
-        finally:
-            try:
-                unlink(fh.name)
-            except FileNotFoundError:
-                pass
+        content = f"{template.render(**context)}\n"
+        if (
+            not output_path.exists()
+            or output_path.read_text(encoding="utf8") != content
+        ):
+            output_path.write_text(content, encoding="utf8")
 
     @property
     def _env(self) -> Environment:
@@ -111,7 +105,7 @@ class Builder:
                 autoescape=False,
             )
             self.__env.filters["camelcase"] = _to_camel_case
-            self.__env.filters["path_join"] = lambda paths: path_join(*paths)
+            self.__env.filters["path_join"] = lambda paths: path_join(*paths)  # noqa: PTH118
             self.__env.filters["display_number"] = _to_int_or_float
         return self.__env
 
@@ -130,23 +124,26 @@ class Builder:
     @staticmethod
     def _setup_link(source: Path, target: Path) -> None:
         if not target.exists():
-            raise InvoicezException(
+            msg = (
                 f"{target} could not be found. Please make sure it exists before "
                 "proceeding."
             )
+            raise InvoicezError(msg)
         target = target.resolve()
         if source.is_symlink():
             if source.resolve().samefile(target):
                 return
-            raise InvoicezException(
+            msg = (
                 f"{source} already exists in the build directory and does not point to "
                 f"{target}. Please clean the build directory."
             )
-        elif source.exists():
-            raise InvoicezException(
+            raise InvoicezError(msg)
+        if source.exists():
+            msg = (
                 f"{source} already exists in the build directory. Please clean the "
                 "build directory."
             )
+            raise InvoicezError(msg)
         source.parent.mkdir(parents=True, exist_ok=True)
         source.symlink_to(target)
 
@@ -155,5 +152,5 @@ def _to_camel_case(string: str) -> str:
     return "".join(substring.capitalize() or "_" for substring in string.split("_"))
 
 
-def _to_int_or_float(number: Union[int, float]) -> str:
+def _to_int_or_float(number: int | float) -> str:
     return f"{number:.2f}".rstrip("0").rstrip(".")

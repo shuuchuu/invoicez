@@ -1,18 +1,15 @@
+from collections.abc import Callable
 from functools import partial, wraps
-from importlib import import_module
-from importlib import invalidate_caches as importlib_invalidate_caches
 from logging import INFO
 from pathlib import Path
-from pkgutil import walk_packages
-from typing import Any, Callable, List
+from typing import Any
 
-from click import ClickException
+from click import ClickException, argument, group
 from click import Path as ClickPath
-from click import argument, group
 from click import option as click_option
 from coloredlogs import install as coloredlogs_install
 
-from invoicez.exceptions import InvoicezException
+from invoicez.exceptions import InvoicezError
 from invoicez.paths import Paths
 
 option = partial(click_option, show_default=True)
@@ -31,9 +28,9 @@ quote_option = option(
 )
 
 
-def _autocomplete_path(ctx: Any, args: List[str], incomplete: str) -> List[str]:
+def _autocomplete_path(ctx: Any, args: list[str], incomplete: str) -> list[str]:
     try:
-        paths = Paths(Path("."))
+        paths = Paths(Path())
         return [
             str(t.relative_to(paths.working_dir))
             for t in paths.working_dir.glob("*.yml")
@@ -64,7 +61,7 @@ def command(f: Callable[..., Any]) -> Callable[..., Any]:
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             result = f(*args, **kwargs)
-        except InvoicezException as e:
+        except InvoicezError as e:
             raise ClickException(str(e)) from e
         return result
 
@@ -72,17 +69,34 @@ def command(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def _import_module_and_submodules(package_name: str) -> None:
+    """Import all modules and submodules from a package.
+
+    From https://github.com/allenai/allennlp/blob/master/allennlp/common/util.py.
+
+    Args:
+        package_name: Name of the package to fully import.
     """
-    From https://github.com/allenai/allennlp/blob/master/allennlp/common/util.py
-    """
+    from importlib import import_module, reload
+    from importlib import invalidate_caches as importlib_invalidate_caches
+    from pkgutil import walk_packages
+    from sys import modules
+
     importlib_invalidate_caches()
 
-    module = import_module(package_name)
+    if package_name in modules:
+        module = modules[package_name]
+        reload(module)
+    else:
+        module = import_module(package_name)
     path = getattr(module, "__path__", [])
     path_string = "" if not path else path[0]
 
     for module_finder, name, _ in walk_packages(path):
-        if path_string and module_finder.path != path_string:  # type: ignore
+        if (
+            path_string
+            and hasattr(module_finder, "path")
+            and module_finder.path != path_string
+        ):
             continue
         subpackage = f"{package_name}.{name}"
         _import_module_and_submodules(subpackage)
