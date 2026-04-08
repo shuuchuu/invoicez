@@ -49,11 +49,11 @@ def new(path: str, name: str, dir_path: str, quote: bool) -> None:
         yaml_safe_dump(content, fh, allow_unicode=True)
 
 
-def _get_next_doc_number(paths: Paths, quote_option: bool) -> str:
+def _get_next_doc_number(paths: Paths, quote: bool) -> str:
     now = datetime.now()
     prefix = now.strftime("%Y-%m")
     n_documents = 0
-    is_doc = _is_quote if quote_option else _is_invoice
+    is_doc = _is_quote if quote else _is_invoice
     for item in paths.git_dir.glob("**/*.yml"):
         if is_doc(item):
             n_documents += 1
