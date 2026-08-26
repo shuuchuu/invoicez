@@ -17,7 +17,7 @@ license-files = ["LICENSE"]
 name = "invoicez"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "3.2.1"
+version = "3.3.0"
 
 [dependency-groups]
 dev = [
@@ -45,7 +45,7 @@ convention = "google"
 [bumpver]
 commit = true
 commit_message = "Bump version to {new_version}"
-current_version = "3.2.1"
+current_version = "3.3.0"
 push = true
 tag = true
 tag_message = "{new_version}"
