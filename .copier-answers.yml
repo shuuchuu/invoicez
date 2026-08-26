@@ -1,0 +1,16 @@
+# Changes here will be overwritten by Copier
+_commit: 0.1.2
+_src_path: ../shuuchuu/template
+project_authors:
+- '  {name = "m09", email = "142691+m09@users.noreply.github.com"},'
+- '  {name = "NyxAether", email = "contact.nyxhemera@gmail.com"},'
+project_description: Tool to handle invoices.
+project_homepage: https://codeberg.org/shuuchuu/invoicez
+project_id: invoicez
+project_license: Apache-2.0
+project_name: invoicez
+tools:
+- bumpver
+- doit
+- githooks
+- pytest

@@ -105,7 +105,7 @@ class Builder:
                 autoescape=False,
             )
             self.__env.filters["camelcase"] = _to_camel_case
-            self.__env.filters["path_join"] = lambda paths: path_join(*paths)  # noqa: PTH118
+            self.__env.filters["path_join"] = lambda paths: path_join(*paths)  # ruff: ignore[os-path-join]
             self.__env.filters["display_number"] = _to_int_or_float
         return self.__env
 
