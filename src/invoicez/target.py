@@ -19,9 +19,10 @@ class Target:
         self.name = path.with_suffix("").name
         self.path = path
         self.template_name = template_name
-        self.template_path = paths.jinja2_dir / template_name
-        if not self.template_path.name.endswith(".tex"):
-            self.template_path = self.template_path.with_suffix(".tex")
-        if not self.template_path.is_file():
-            msg = f"Could not find the template to use {self.template_path}."
+        full_template_path = paths.jinja2_dir / template_name
+        if not full_template_path.name.endswith(".tex"):
+            full_template_path = full_template_path.with_suffix(".tex")
+        if not full_template_path.is_file():
+            msg = f"Could not find the template to use {full_template_path}."
             raise InvoicezError(msg)
+        self.template_path = full_template_path.name
