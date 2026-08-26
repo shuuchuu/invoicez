@@ -1,6 +1,5 @@
 from copy import deepcopy
 from logging import getLogger
-from multiprocessing import Pool
 from os.path import join as path_join
 from pathlib import Path
 from shutil import copyfile
@@ -23,21 +22,16 @@ class Builder:
         self._track_build()
 
     def _track_build(self) -> None:
-        to_compile = [self._target]
-        with Pool(1) as pool:
-            completed_processes = pool.map(self._build, to_compile)
-        for completed_process, target in zip(
-            completed_processes, to_compile, strict=True
-        ):
-            compilation = f"{target.name}/{target.template_name}"
-            if completed_process.returncode != 0:
-                self._logger.warning("Compilation %s errored", compilation)
-                self._logger.warning(
-                    "Captured %s stderr\n%s", compilation, completed_process.stderr
-                )
-                self._logger.warning(
-                    "Captured %s stdout\n%s", compilation, completed_process.stdout
-                )
+        completed_process = self._build(self._target)
+        compilation = f"{self._target.name}/{self._target.template_name}"
+        if completed_process.returncode != 0:
+            self._logger.warning("Compilation %s errored", compilation)
+            self._logger.warning(
+                "Captured %s stderr\n%s", compilation, completed_process.stderr
+            )
+            self._logger.warning(
+                "Captured %s stdout\n%s", compilation, completed_process.stdout
+            )
 
     def _get_filename(self) -> str:
         return self._target.name
