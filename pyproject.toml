@@ -30,11 +30,19 @@ dev = [
   "types-pyyaml>=6.0.12.20260815",
 ]
 
+[project.scripts]
+invoicez = "invoicez.cli:cli"
+
 [tool.ruff]
 target-version = "py312"
 
 [tool.ruff.lint]
-ignore = ["D1", "D203", "D213", "RUF067"]
+ignore = [
+  "D1",
+  "incorrect-blank-line-before-class", # D203
+  "multi-line-summary-second-line", # D213
+  "non-empty-init-module", # RUF067
+]
 preview = true
 select = ["A", "B", "C", "D", "DOC", "E", "EM", "F", "I", "N", "PIE", "PTH", "RET", "RUF", "SIM", "SLF", "TC", "UP", "W"]
 
