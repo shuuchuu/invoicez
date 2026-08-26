@@ -4,7 +4,6 @@ from pathlib import Path
 from shutil import copytree
 from typing import Any
 
-import appdirs
 from git import Repo
 from pdfminer.high_level import extract_pages, extract_text
 from pytest import fixture, mark
@@ -19,7 +18,6 @@ def working_dir(tmp_path: Path, monkeypatch: Any) -> Path:
     Repo.init(str(tmp_dir))
     working_dir = tmp_dir / "company"
     monkeypatch.chdir(working_dir)
-    monkeypatch.setattr(appdirs, "user_config_dir", lambda _: str(tmp_dir))
     return working_dir
 
 
