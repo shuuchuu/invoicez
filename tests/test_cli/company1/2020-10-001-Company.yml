@@ -1,0 +1,15 @@
+date: 2020-10-07
+document_number: 2020-10-001
+company: company1
+description: Facture pour deux jours de formation intra-entreprise à Seeyond code BDAZZ1.
+products:
+  - start: 2020-09-21
+    description: Journée de formation très spécifique basée sur BDA
+    pu: 750
+    n: 2
+    unit: jours
+  - start: 2020-09-21
+    description: Frais de déplacement journalier
+    pu: 150
+    n: 2
+    unit: jours

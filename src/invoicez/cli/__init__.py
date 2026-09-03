@@ -1,105 +1,39 @@
-from collections.abc import Callable
-from functools import partial, wraps
-from logging import INFO
+import sys
+from logging import INFO, basicConfig
 from pathlib import Path
-from typing import Any
+from typing import Annotated
 
-from click import ClickException, argument, group
-from click import Path as ClickPath
-from click import option as click_option
-from coloredlogs import install as coloredlogs_install
+from cyclopts import App, Parameter, validators
+from rich.logging import RichHandler
 
-from invoicez.exceptions import InvoicezError
-from invoicez.paths import Paths
+from invoicez import __version__
 
-option = partial(click_option, show_default=True)
+app = App(version=__version__)
 
-dir_path_option = option(
-    "--dir-path",
-    type=ClickPath(exists=True, readable=True, file_okay=False),
-    default=".",
-    help="Path of the working directory.",
-)
+app.register_install_completion_command()
 
-quote_option = option(
-    "--quote",
-    is_flag=True,
-    help="If set, resulting yaml will be a quote not, an invoice.",
-)
+# Lazy load commands to keep completion fast
+app.command("invoicez.cli.new:new")
+app.command("invoicez.cli.cancel:cancel")
+app.command("invoicez.cli.run:run")
+app.command("invoicez.cli.clean:clean")
+app.command("invoicez.cli.send:send")
+app.command("invoicez.cli.login:login")
 
 
-def _autocomplete_path(ctx: Any, args: list[str], incomplete: str) -> list[str]:
-    try:
-        paths = Paths(Path())
-        return [
-            str(t.relative_to(paths.working_dir))
-            for t in paths.working_dir.glob("*.yml")
-            if t.name != "company-config.yml"
-        ]
-    except Exception:
-        return []
+ExistingYAMLPath = Annotated[
+    Path,
+    Parameter(
+        validator=validators.Path(exists=True, dir_okay=False, ext=["yml", "yaml"])
+    ),
+]
 
 
-path_argument = argument(
-    "path",
-    type=ClickPath(exists=True, dir_okay=False, readable=True),
-    shell_complete=_autocomplete_path,
-)
-
-
-@group(chain=True)
-def cli() -> None:
-    coloredlogs_install(
+def main(*args: str) -> None:
+    basicConfig(
         level=INFO,
-        fmt="%(asctime)s %(name)s %(message)s",
+        format="%(message)s",
         datefmt="%H:%M:%S",
+        handlers=[RichHandler(rich_tracebacks=True, tracebacks_show_locals=False)],
     )
-
-
-def command(f: Callable[..., Any]) -> Callable[..., Any]:
-    @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            result = f(*args, **kwargs)
-        except InvoicezError as e:
-            raise ClickException(str(e)) from e
-        return result
-
-    return cli.command()(wrapper)
-
-
-def _import_module_and_submodules(package_name: str) -> None:
-    """Import all modules and submodules from a package.
-
-    From https://github.com/allenai/allennlp/blob/master/allennlp/common/util.py.
-
-    Args:
-        package_name: Name of the package to fully import.
-    """
-    from importlib import import_module, reload
-    from importlib import invalidate_caches as importlib_invalidate_caches
-    from pkgutil import walk_packages
-    from sys import modules
-
-    importlib_invalidate_caches()
-
-    if package_name in modules:
-        module = modules[package_name]
-        reload(module)
-    else:
-        module = import_module(package_name)
-    path = getattr(module, "__path__", [])
-    path_string = "" if not path else path[0]
-
-    for module_finder, name, _ in walk_packages(path):
-        if (
-            path_string
-            and hasattr(module_finder, "path")
-            and module_finder.path != path_string
-        ):
-            continue
-        subpackage = f"{package_name}.{name}"
-        _import_module_and_submodules(subpackage)
-
-
-_import_module_and_submodules(__name__)
+    app(args or sys.argv[1:])

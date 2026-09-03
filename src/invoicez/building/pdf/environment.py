@@ -3,6 +3,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from invoicez.exceptions import InvoicezError
+
 
 def _to_camel_case(string: str) -> str:
     return "".join(substring.capitalize() or "_" for substring in string.split("_"))
@@ -30,3 +32,13 @@ def create_environment(jinja2_dir: Path) -> Environment:
     environment.filters["path_join"] = lambda paths: path_join(*paths)  # ruff: ignore[os-path-join]
     environment.filters["display_number"] = _to_int_or_float
     return environment
+
+
+def resolve_template(template: str, jinja2_dir: Path) -> str:
+    full_template_path = jinja2_dir / template
+    if not full_template_path.name.endswith(".tex"):
+        full_template_path = full_template_path.with_suffix(".tex")
+    if not full_template_path.is_file():
+        msg = f"Could not find the template to use {full_template_path}."
+        raise InvoicezError(msg)
+    return full_template_path.name

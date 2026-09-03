@@ -1,0 +1,72 @@
+BG-1:
+  - BT-21: PMT
+    BT-22: En cas de retard de paiement, seront exigibles une indemnité forfaitaire pour frais de recouvrement de 40 €
+  - BT-21: PMD
+    BT-22: En cas de retard de paiement, seront exigibles, conformément à l'article L 441-6 du code de commerce, des pénalités de retard au taux de 12 % par an
+  - BT-21: AAB
+    BT-22: Les réglements reçus avant la date d'échéance ne donneront pas lieu à escompte.
+  - BT-21: ABL
+    BT-22: "NDA : XXXXX"
+  - BT-21: AAI
+    BT-22: TVA 0% pour la formation professionnelle continue, article 261-4-4° du CGI
+BG-23:
+  - BT-116: "1620.00"
+    BT-117: "324.00"
+    BT-118: S
+    BT-119: "20.00"
+BG-25:
+  - BT-126: "1"
+    BT-129: "3.0000"
+    BT-130: jours
+    BT-131: "1620.00"
+    BT-146: "540.00"
+    BT-148: "540.0"
+    BT-151: S
+    BT-152: "20.00"
+    BT-153: Facture de truc machin
+BT-1: 2020-10-002
+BT-106: "1620.00"
+BT-109: "1620.00"
+BT-110: "324.00"
+BT-110-1: EUR
+BT-112: "1944.00"
+BT-115: "1944.00"
+BT-2: 2020-10-15
+BT-23: S1
+BT-24: urn:cen.eu:en16931:2017
+BT-27: Burger Queen
+BT-3: "380"
+BT-30: "000000002"
+BT-30-1: "0002"
+BT-31: FR18000000002
+BT-34: "315143296_58423"
+BT-34-1: "0225"
+BT-35: 809 avenue du Languedoc
+BT-37: Millau
+BT-38: "12100"
+BT-40: FR
+BT-42: +331XXXXXXXX
+BT-43: xxx@yyy.com
+BT-44: Entreprise client
+BT-47: "123456789"
+BT-48: FR32123456789
+BT-49: "315143296_58422"
+BT-49-1: "0225"
+BT-5: EUR
+BT-50: Adresse du client
+BT-52: VILLE
+BT-53: "00000"
+BT-55: FR
+BT-63: FR18000000002
+BT-70: Entreprise client
+BT-71:
+  "0002": "123456789"
+BT-75: Adresse du client
+BT-77: VILLE
+BT-78: "00000"
+BT-80: FR
+BT-81: "30"
+BT-84: FRXXXXXXXXXXXXXXXXXXXXXXX
+BT-85: Burger Queen
+BT-86: BBBRCRRXX
+BT-9: 2020-11-14

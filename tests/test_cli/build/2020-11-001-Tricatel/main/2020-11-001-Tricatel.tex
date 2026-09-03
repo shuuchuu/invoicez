@@ -1,0 +1,81 @@
+\documentclass[11pt,a4paper]{scrlttr2}
+\usepackage[a4paper,left=2cm,right=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{fontspec}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{tabularx}
+
+\LoadLetterOption{NF}
+
+\KOMAoptions{%
+   fromalign=left%
+  ,fromphone=true%
+  ,fromemail=true%
+  ,fromlogo=false%
+  ,foldmarks=false%
+  ,parskip=full%
+}
+
+\setkomavar{date}{}
+
+\firsthead{%
+  Burger Queen\\%
+  809 avenue du Languedoc\\%
+  +331XXXXXXXX\\%
+  xxx@yyy.com\\%
+  APE~XXXXX\\%
+  SIRET~00000000200014%
+}
+
+\firstfoot{\centering\small{%
+    Burger Queen\\[0.5em]%
+    +331XXXXXXXX%
+    \hspace{1cm}%
+    \texttt{xxx@yyy.com}%
+  }\\[0.5em]%
+  \scriptsize{%
+    Dispensé d'immatriculation au registre du commerce et des sociétés
+    et au répertoire des métiers%
+  }%
+}
+
+
+\begin{document}
+\begin{letter}{%
+    Tricatel\\%
+    Avenue de la République\\%
+    SIREN~000000001%
+  }
+  \opening{\textbf{Facture n°BURGERQUEEN-TRICATEL-0001 émise le 2026-04-12 à Millau}}
+  None
+
+  \begin{tabularx}{\textwidth}{cXrrr}
+    \toprule
+    \textbf{Date}       & \textbf{Désignation}       & \textbf{Prix unitaire (€)} & \textbf{Quantité} & \textbf{Montant (€)}     \\
+    \midrule
+    % We use a namespace because of the scoping behavior https://jinja.palletsprojects.com/en/2.11.x/templates/#assignments
+     & Facture de truc machin & 540.0          & 3.0  & 1620.0             \\
+    \addlinespace
+    \textbf{Total HT}   &                            &                            &                   & \textbf{1620.0} \\
+    \bottomrule
+    \multicolumn{5}{r}{\small{TVA non applicable, art 293 B du CGI}}                                                             \\
+  \end{tabularx}
+
+  Date d'échéance du paiment~:~45.
+
+  En cas de retard de paiement, seront exigibles, conformément à l’article L 441-6 du code de commerce,
+  une indemnité calculée sur la base de trois fois le taux de l’intérêt légal en vigueur ainsi qu’une indemnité
+  forfaitaire pour frais de recouvrement de 40 €.
+
+  À régler par chèque ou par virement bancaire~:
+
+  \begin{tabular}{ll}
+    Domiciliation & \texttt{SOME BANK / SOME OFFICE}  \\
+    Titulaire     & \texttt{BURGER QUEEN / 809 AVENUE DU LANGUEDOC / MILLAU} \\
+    RIB           & \texttt{XXXXX XXXXX XXXXXXXXXXX XX}           \\
+    IBAN          & \texttt{FRXXXXXXXXXXXXXXXXXXXXXXX}                  \\
+    BIC           & \texttt{BBBRCRRXX}                   \\
+  \end{tabular}
+\end{letter}
+\end{document}

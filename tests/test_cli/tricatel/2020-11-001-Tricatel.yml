@@ -1,0 +1,8 @@
+company: tricatel
+document_number: "BURGERQUEEN-TRICATEL-0001"
+date: "2026-04-12"
+products:
+  - pu: 540.00
+    n: 3
+    description: "Facture de truc machin"
+    unit: "DAY"

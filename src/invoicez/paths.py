@@ -7,14 +7,15 @@ from invoicez.exceptions import InvoicezError
 
 
 class Paths:
-    def __init__(self, working_dir: Path) -> None:
-        self.working_dir = working_dir.resolve()
+    def __init__(self) -> None:
+        self.working_dir = Path().resolve()
         self.build_dir = self.working_dir / "build"
         self.pdf_dir = self.working_dir / "pdf"
         self.assets_dir = self.git_dir / "assets"
         self.templates_dir = self.git_dir / "templates"
         self.jinja2_dir = self.templates_dir / "jinja2"
-        self.config = self.git_dir / "config.yml"
+        self.variables = self.git_dir / "variables.yml"
+        self.settings = self.git_dir / "settings.yml"
 
     @property
     def git_dir(self) -> Path:

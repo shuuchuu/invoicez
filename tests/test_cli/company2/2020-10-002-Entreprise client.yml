@@ -1,0 +1,13 @@
+company: company2
+document_number: 2020-10-002
+date: 2020-10-15
+products:
+  - pu: 540.00
+    n: 3
+    description: "Facture de truc machin"
+    unit: "jours"
+invoice_meta:
+  type_invoice: "S1" # S5 : sous-traitance service, S1 : service
+tva:
+  rate: 0.2
+  category: S

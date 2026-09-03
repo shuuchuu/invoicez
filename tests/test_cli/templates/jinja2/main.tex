@@ -1,4 +1,4 @@
-\documentclass[\V{font_size},a4paper]{scrlttr2}
+\documentclass[\V{latex_extras["font_size"]},a4paper]{scrlttr2}
 \usepackage[a4paper,left=2cm,right=2cm]{geometry}
 \usepackage{graphicx}
 \usepackage{fontspec}
@@ -24,8 +24,8 @@
   \V{user["address"]}\\%
   \V{user["phone"]}\\%
   \V{user["email"]}\\%
-  APE~\V{user["ape"]}\\%
-  SIRET~\V{user["siret"]}%
+  APE~\V{latex_extras["ape"]}\\%
+  SIRET~\V{latex_extras["siret"]}%
 }
 
 \firstfoot{\centering\small{%
@@ -47,10 +47,10 @@
     \V{company["address"].strip().replace("\n", "\\\\")}\\%
     SIREN~\V{company["siren"]}%
   }
-  %% if cancels is defined 
-  \opening{\textbf{Facture d'avoir n°\V{invoice_number} émise le \V{date} à \V{user["place"]} pour remboursement de la facture n°\V{cancels}}}
+  %% if cancelled_document_number is defined
+  \opening{\textbf{Facture d'avoir n°\V{document_number} émise le \V{date} à \V{latex_extras["place"]} pour remboursement de la facture n°\V{cancelled_document_number}}}
   %% else
-  \opening{\textbf{Facture n°\V{invoice_number} émise le \V{date} à \V{user["place"]}}}
+  \opening{\textbf{Facture n°\V{document_number} émise le \V{date} à \V{latex_extras["place"]}}}
   %%endif
 
   \V{description}
@@ -72,7 +72,7 @@
     \multicolumn{5}{r}{\small{TVA non applicable, art 293 B du CGI}}                                                             \\
   \end{tabularx}
 
-  %% if cancels is defined 
+  %% if cancelled_document_number is defined
   %% else
   Date d'échéance du paiment~:~\V{company["maximum_days"]}.
 
@@ -83,11 +83,11 @@
   À régler par chèque ou par virement bancaire~:
 
   \begin{tabular}{ll}
-    Domiciliation & \texttt{\V{user["account_bank"]}}  \\
-    Titulaire     & \texttt{\V{user["account_owner"]}} \\
-    RIB           & \texttt{\V{user["rib"]}}           \\
-    IBAN          & \texttt{\V{user["iban"]}}          \\
-    BIC           & \texttt{\V{user["bic"]}}           \\
+    Domiciliation & \texttt{\V{latex_extras["account_bank"]}}  \\
+    Titulaire     & \texttt{\V{latex_extras["account_owner"]}} \\
+    RIB           & \texttt{\V{latex_extras["rib"]}}           \\
+    IBAN          & \texttt{\V{user["iban"]}}                  \\
+    BIC           & \texttt{\V{user["bic"]}}                   \\
   \end{tabular}
   %% endif
 

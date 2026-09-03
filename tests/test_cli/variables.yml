@@ -1,0 +1,68 @@
+invoice_meta:
+  spec_format: "urn:cen.eu:en16931:2017"
+  currency: "EUR"
+  type_invoice: "S5" # S5 : sous-traitance service, S1 : service
+tva:
+  rate: 0 # Taux TVA, 0 si exonéré
+  category: "E" # E:Exonération, S:Standard
+company:
+  maximum_days: 30
+user:
+  name: "Burger Queen"
+  email: "xxx@yyy.com"
+  phone: "+331XXXXXXXX"
+  address: "809 avenue du Languedoc"
+  city: Millau
+  postcode: "12100"
+  country: FR
+  siren: "000000002"
+  bic: "BBBRCRRXX"
+  iban: "FRXXXXXXXXXXXXXXXXXXXXXXX"
+  account_name: "Burger Queen"
+  electronic_address: "315143296_58423"
+  electronic_address_scheme: "0225"
+latex_extras:
+  font_size: 11pt
+  place: Millau
+  ape: XXXXX
+  siret: "00000000200014"
+  rib: XXXXX XXXXX XXXXXXXXXXX XX
+  account_bank: SOME BANK / SOME OFFICE
+  account_owner: BURGER QUEEN / 809 AVENUE DU LANGUEDOC / MILLAU
+notices:
+  recouvrement: "En cas de retard de paiement, seront exigibles une indemnité forfaitaire pour frais de recouvrement de 40 €"
+  taux_retard: "En cas de retard de paiement, seront exigibles, conformément à l'article L 441-6 du code de commerce, des pénalités de retard au taux de 12 % par an"
+  escompte: "Les réglements reçus avant la date d'échéance ne donneront pas lieu à escompte."
+  legal: "NDA : XXXXX"
+  general: "TVA 0% pour la formation professionnelle continue, article 261-4-4° du CGI"
+companies:
+  company1:
+    name: Company
+    siren: "666666666"
+    address: Some street
+    city: Some town
+    postcode: "00000"
+    country: FR
+    electronic_address: "XXXXXXXXX_XXXXX"
+    electronic_address_scheme: "0225"
+    maximum_days: 60
+  company2:
+    name: "Entreprise client"
+    address: "Adresse du client"
+    city: "VILLE"
+    postcode: "00000"
+    country: "FR"
+    siren: "123456789"
+    electronic_address: "315143296_58422"
+    electronic_address_scheme: "0225"
+    maximum_days: 30
+  tricatel:
+    name: "Tricatel"
+    address: "Avenue de la République"
+    city: "Chambray-lès-Tours"
+    postcode: "37170"
+    country: "FR"
+    siren: "000000001" # Numéro d'entreprise
+    electronic_address: "315143296_58422" # Lignes d'annuaire SuperPDP
+    electronic_address_scheme: "0225"
+    maximum_days: 45
