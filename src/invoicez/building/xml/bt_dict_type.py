@@ -14,6 +14,7 @@ SellerBT = TypedDict(
     "SellerBT",
     {
         "BT-27": str,
+        "BT-29": NotRequired[dict[str, str]],
         "BT-30": NotRequired[str],
         "BT-30-1": NotRequired[str],
         "BT-31": str,
@@ -65,6 +66,7 @@ TVABreakdownBT = TypedDict(
         "BT-117": str,
         "BT-118": str,
         "BT-119": str,
+        "BT-121": str,
     },
     total=False,
 )
@@ -77,6 +79,8 @@ InvoiceLineBT = TypedDict(
         "BT-129": str,
         "BT-130": str,
         "BT-131": str,
+        "BT-134": NotRequired[date],
+        "BT-135": NotRequired[date],
         "BT-146": str,
         "BT-148": str,
         "BT-151": str,
@@ -95,6 +99,8 @@ BT = TypedDict(
         "BT-3": str,
         "BT-5": str,
         "BT-9": date,
+        "BT-12": str,
+        "BT-13": str,
         "BT-23": str,
         "BT-24": str,
         "BT-57": str,
@@ -102,6 +108,7 @@ BT = TypedDict(
         "BG-3": list[PreviousInvoiceBT],
         # Seller
         "BT-27": str,
+        "BT-29": dict[str, str],
         "BT-30": str,
         "BT-30-1": str,
         "BT-31": str,

@@ -20,12 +20,18 @@ from invoicez.variables import (
     Variables,
 )
 
+# Exemption reason for training services, article 261-4-4° du CGI.
+_TVA_EXEMPTION_CODE = "VATEX-FR-CGI261-4"
+
 
 def _convert_tva(tva: TVA) -> TVABreakdownBT:
-    return {
+    d: TVABreakdownBT = {
         "BT-118": tva.category,
         "BT-119": f"{tva.rate * 100:.2f}",
     }
+    if tva.category == "E":
+        d["BT-121"] = _TVA_EXEMPTION_CODE
+    return d
 
 
 def _compute_vat_id(siren: str) -> str:
@@ -37,8 +43,9 @@ def _convert_seller(seller: Seller) -> SellerBT:
     vat_id = _compute_vat_id(seller.siren)
     return {
         "BT-27": seller.name,
+        "BT-29": {"0009": seller.siret},  # SIRET-CODE scheme
         "BT-30": seller.siren,
-        "BT-30-1": "0002",
+        "BT-30-1": "0002",  # SIRENE scheme
         "BT-34": seller.electronic_address,
         "BT-34-1": seller.electronic_address_scheme,
         "BT-40": seller.country,
@@ -141,6 +148,15 @@ def _add_notices(d: BT, notices: Notices) -> None:
     d.setdefault("BG-1", []).extend(_convert_notices(notices))
 
 
+def _add_reference(d: BT, reference: str | None, company: Company) -> None:
+    if not reference:
+        return
+    if company.reference_kind == "contract":
+        d["BT-12"] = reference
+    else:
+        d["BT-13"] = reference
+
+
 def _add_seller(d: BT, seller: Seller) -> None:
     d.update(_convert_seller(seller))
 
@@ -153,19 +169,22 @@ def _add_invoice_line(
     invoice_line: InvoiceLine, lines: list[InvoiceLineBT], tva: TVA
 ) -> float:
     line_number = len(lines) + 1
-    lines.append(
-        {
-            "BT-126": f"{line_number}",
-            "BT-153": invoice_line.description,
-            "BT-148": f"{invoice_line.pu}",
-            "BT-146": f"{invoice_line.pu:.2f}",
-            "BT-129": f"{invoice_line.n:.4f}",
-            "BT-151": tva.category,
-            "BT-152": f"{tva.rate * 100:.2f}",
-            "BT-130": invoice_line.unit,
-            "BT-131": f"{invoice_line.pu * invoice_line.n:.2f}",
-        }
-    )
+    line: InvoiceLineBT = {
+        "BT-126": f"{line_number}",
+        "BT-153": invoice_line.description,
+        "BT-148": f"{invoice_line.pu}",
+        "BT-146": f"{invoice_line.pu:.2f}",
+        "BT-129": f"{invoice_line.n:.4f}",
+        "BT-151": tva.category,
+        "BT-152": f"{tva.rate * 100:.2f}",
+        "BT-130": invoice_line.unit,
+        "BT-131": f"{invoice_line.pu * invoice_line.n:.2f}",
+    }
+    if invoice_line.start:
+        line["BT-134"] = invoice_line.start
+    if invoice_line.end:
+        line["BT-135"] = invoice_line.end
+    lines.append(line)
     return invoice_line.pu * invoice_line.n
 
 
@@ -208,6 +227,7 @@ def convert(variables: Variables) -> BT:
         variables.due_date,
     )
     _add_notices(d, variables.notices)
+    _add_reference(d, variables.reference, variables.company)
     _add_seller(d, variables.user)
     _add_buyer(d, variables.company)
     _add_products(d, variables.products, variables.tva, variables.invoice_meta.currency)

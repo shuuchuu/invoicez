@@ -7,5 +7,6 @@ __pycache__/
 .vscode/
 dist/
 *.egg-info
+.claude/settings.local.json
 
 creds.env

@@ -16,6 +16,7 @@ user:
   postcode: "12100"
   country: FR
   siren: "000000002"
+  siret: "00000000200014"
   bic: "BBBRCRRXX"
   iban: "FRXXXXXXXXXXXXXXXXXXXXXXX"
   account_name: "Burger Queen"
@@ -23,12 +24,7 @@ user:
   electronic_address_scheme: "0225"
 latex_extras:
   font_size: 11pt
-  place: Millau
   ape: XXXXX
-  siret: "00000000200014"
-  rib: XXXXX XXXXX XXXXXXXXXXX XX
-  account_bank: SOME BANK / SOME OFFICE
-  account_owner: BURGER QUEEN / 809 AVENUE DU LANGUEDOC / MILLAU
 notices:
   recouvrement: "En cas de retard de paiement, seront exigibles une indemnité forfaitaire pour frais de recouvrement de 40 €"
   taux_retard: "En cas de retard de paiement, seront exigibles, conformément à l'article L 441-6 du code de commerce, des pénalités de retard au taux de 12 % par an"

@@ -1,3 +1,4 @@
+from datetime import date
 from os.path import join as path_join
 from pathlib import Path
 
@@ -12,6 +13,16 @@ def _to_camel_case(string: str) -> str:
 
 def _to_int_or_float(number: int | float) -> str:
     return f"{number:.2f}".rstrip("0").rstrip(".")
+
+
+def _display_date_range(start: date | None, end: date | None = None) -> str:
+    if start is None:
+        return ""
+    if end is None or end == start:
+        return f"{start.day}/{start.month}/{start.year}"
+    if (start.year, start.month) == (end.year, end.month):
+        return f"{start.day}-{end.day}/{start.month}/{start.year}"
+    return f"{start.day}/{start.month}/{start.year}-{end.day}/{end.month}/{end.year}"
 
 
 def create_environment(jinja2_dir: Path) -> Environment:
@@ -31,6 +42,7 @@ def create_environment(jinja2_dir: Path) -> Environment:
     environment.filters["camelcase"] = _to_camel_case
     environment.filters["path_join"] = lambda paths: path_join(*paths)  # ruff: ignore[os-path-join]
     environment.filters["display_number"] = _to_int_or_float
+    environment.filters["display_date_range"] = _display_date_range
     return environment
 
 

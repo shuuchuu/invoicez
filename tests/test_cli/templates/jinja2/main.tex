@@ -21,11 +21,12 @@
 
 \firsthead{%
   \V{user["name"]}\\%
-  \V{user["address"]}\\%
+  \V{user["address"].strip().replace("\n", "\\\\")}\\%
+  \V{user["postcode"]}~\V{user["city"]}~\V{user["country"]}\\%
   \V{user["phone"]}\\%
   \V{user["email"]}\\%
   APE~\V{latex_extras["ape"]}\\%
-  SIRET~\V{latex_extras["siret"]}%
+  SIRET~\V{user["siret"]}%
 }
 
 \firstfoot{\centering\small{%
@@ -45,13 +46,18 @@
 \begin{letter}{%
     \V{company["name"]}\\%
     \V{company["address"].strip().replace("\n", "\\\\")}\\%
+    \V{company["postcode"]}~\V{company["city"]}~\V{company["country"]}\\%
     SIREN~\V{company["siren"]}%
   }
-  %% if cancelled_document_number is defined
-  \opening{\textbf{Facture d'avoir n°\V{document_number} émise le \V{date} à \V{latex_extras["place"]} pour remboursement de la facture n°\V{cancelled_document_number}}}
+  %% if previous_document_number
+  \opening{\textbf{Facture d'avoir n°\V{document_number} émise le \V{date} à \V{user["city"]} pour remboursement de la facture n°\V{previous_document_number}}}
   %% else
-  \opening{\textbf{Facture n°\V{document_number} émise le \V{date} à \V{latex_extras["place"]}}}
+  \opening{\textbf{Facture n°\V{document_number} émise le \V{date} à \V{user["city"]}}}
   %%endif
+
+  %% if reference
+  Référence~:~\V{reference}.
+  %% endif
 
   \V{description}
 
@@ -64,7 +70,7 @@
     %% for product in products:
     %%   set subtotal = product["pu"] * product["n"]
     %%   set total.value = total.value + subtotal
-    \V{product["date"]} & \V{product["description"]} & \V{product["pu"]}          & \V{product["n"]}  & \V{subtotal}             \\
+    \V{product["start"] | display_date_range(product["end"])} & \V{product["description"]} & \V{product["pu"]}          & \V{product["n"]}  & \V{subtotal}             \\
     %% endfor
     \addlinespace
     \textbf{Total HT}   &                            &                            &                   & \textbf{\V{total.value}} \\
@@ -72,7 +78,7 @@
     \multicolumn{5}{r}{\small{TVA non applicable, art 293 B du CGI}}                                                             \\
   \end{tabularx}
 
-  %% if cancelled_document_number is defined
+  %% if previous_document_number
   %% else
   Date d'échéance du paiment~:~\V{company["maximum_days"]}.
 
@@ -83,11 +89,9 @@
   À régler par chèque ou par virement bancaire~:
 
   \begin{tabular}{ll}
-    Domiciliation & \texttt{\V{latex_extras["account_bank"]}}  \\
-    Titulaire     & \texttt{\V{latex_extras["account_owner"]}} \\
-    RIB           & \texttt{\V{latex_extras["rib"]}}           \\
-    IBAN          & \texttt{\V{user["iban"]}}                  \\
-    BIC           & \texttt{\V{user["bic"]}}                   \\
+    Titulaire & \texttt{\V{user["account_name"]}} \\
+    IBAN      & \texttt{\V{user["iban"]}}          \\
+    BIC       & \texttt{\V{user["bic"]}}           \\
   \end{tabular}
   %% endif
 

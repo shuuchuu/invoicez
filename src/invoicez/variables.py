@@ -1,10 +1,10 @@
 from collections.abc import Mapping
 from datetime import date, timedelta
 from functools import cached_property
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from deepmerge import always_merger
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, model_validator
 
 
 class TVA(BaseModel, extra="forbid", frozen=True):
@@ -24,9 +24,24 @@ class Seller(BaseModel, extra="forbid", frozen=True):
     bic: str
     account_name: str
     siren: str
+    siret: str
     electronic_address: str
     electronic_address_scheme: str
     means_code: str = "30"
+
+    @model_validator(mode="after")
+    def _check_siret_matches_siren(self) -> Self:
+        # BR-FR-09: the SIRET's first 9 digits must match the SIREN, and the
+        # SIRET must be 14 digits long.
+        if len(self.siret) != 14:
+            msg = f"siret must be 14 digits (BR-FR-09), got {self.siret!r}"
+            raise ValueError(msg)
+        if not self.siret.startswith(self.siren):
+            msg = (
+                f"siret {self.siret!r} must start with siren {self.siren!r} (BR-FR-09)"
+            )
+            raise ValueError(msg)
+        return self
 
 
 class Company(BaseModel, extra="forbid", frozen=True):
@@ -39,6 +54,9 @@ class Company(BaseModel, extra="forbid", frozen=True):
     maximum_days: int
     electronic_address: str
     electronic_address_scheme: str
+    # Whether the client wants to be invoiced against a contract (BT-12) or a
+    # purchase order (BT-13); this varies per client.
+    reference_kind: Literal["contract", "order"] = "order"
 
 
 class InvoiceLine(BaseModel, extra="forbid", frozen=True):
@@ -72,6 +90,9 @@ class Variables(BaseModel, extra="forbid", frozen=True):
     quote: bool = False
     previous_document_number: str | None = None
     previous_document_date: date | None = None
+    # Client's contract or purchase order reference, mapped to BT-12 or
+    # BT-13 depending on company.reference_kind.
+    reference: str | None = None
     tva: TVA
     user: Seller
     company: Company
