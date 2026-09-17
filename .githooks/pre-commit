@@ -1,2 +1,2 @@
 #!/bin/sh
-uv run doit check{% if use_pytest %} test{% endif %}
+uv run doit check test
