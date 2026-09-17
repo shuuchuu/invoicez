@@ -83,7 +83,7 @@ class Notices(BaseModel, extra="forbid", frozen=True):
     taux_retard: str  # Taux retard de paiement
     escompte: str  # Escompte (obligatoire)
     legal: str  # Informations légales (NDA)
-    general: str  # Autres informations
+    general: str | None = None  # Autres informations
 
 
 class InvoiceMeta(BaseModel, extra="forbid", frozen=True):

@@ -100,6 +100,7 @@ def _convert_notices(notices: Notices) -> list[NoteBT]:
     return [
         {"BT-21": conversion_fields[k], "BT-22": v}
         for k, v in notices.model_dump().items()
+        if v
     ]
 
 
