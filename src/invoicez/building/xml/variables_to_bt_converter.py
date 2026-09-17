@@ -18,6 +18,7 @@ from invoicez.variables import (
     Notices,
     Seller,
     Variables,
+    compute_vat_id,
 )
 
 # Exemption reason for training services, article 261-4-4° du CGI.
@@ -34,13 +35,8 @@ def _convert_tva(tva: TVA) -> TVABreakdownBT:
     return d
 
 
-def _compute_vat_id(siren: str) -> str:
-    vat_key = (12 + 3 * (int(siren) % 97)) % 97
-    return f"FR{vat_key:02}{siren}"
-
-
 def _convert_seller(seller: Seller) -> SellerBT:
-    vat_id = _compute_vat_id(seller.siren)
+    vat_id = seller.vat_id
     return {
         "BT-27": seller.name,
         "BT-29": {"0009": seller.siret},  # SIRET-CODE scheme
@@ -64,7 +60,7 @@ def _convert_seller(seller: Seller) -> SellerBT:
 
 
 def _convert_company(company: Company) -> CompanyBT:
-    vat_id = _compute_vat_id(company.siren)
+    vat_id = compute_vat_id(company.siren)
     d: CompanyBT = {
         "BT-44": company.name,
         "BT-50": company.address,

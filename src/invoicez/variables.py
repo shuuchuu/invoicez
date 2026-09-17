@@ -12,6 +12,11 @@ class TVA(BaseModel, extra="forbid", frozen=True):
     rate: float
 
 
+def compute_vat_id(siren: str) -> str:
+    vat_key = (12 + 3 * (int(siren) % 97)) % 97
+    return f"FR{vat_key:02}{siren}"
+
+
 class Seller(BaseModel, extra="forbid", frozen=True):
     name: str
     address: str
@@ -28,6 +33,11 @@ class Seller(BaseModel, extra="forbid", frozen=True):
     electronic_address: str
     electronic_address_scheme: str
     means_code: str = "30"
+
+    @computed_field
+    @cached_property
+    def vat_id(self) -> str:
+        return compute_vat_id(self.siren)
 
     @model_validator(mode="after")
     def _check_siret_matches_siren(self) -> Self:
