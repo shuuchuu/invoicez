@@ -20,6 +20,7 @@ app.command("invoicez.cli.clean:clean")
 app.command("invoicez.cli.send:send")
 app.command("invoicez.cli.login:login")
 app.command("invoicez.cli.migrate:migrate_config")
+app.command("invoicez.cli.migrate_documents:migrate_documents")
 app.command("invoicez.cli.install_skill:install_skill")
 
 
