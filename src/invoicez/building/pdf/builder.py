@@ -66,7 +66,6 @@ def _write_latex(
     variables: Variables,
 ) -> None:
     template = environment.get_template(template_path)
-    print(variables.model_dump())
     content = f"{template.render(variables.model_dump())}\n"
     if not output_path.exists() or output_path.read_text(encoding="utf8") != content:
         output_path.write_text(content, encoding="utf8")
