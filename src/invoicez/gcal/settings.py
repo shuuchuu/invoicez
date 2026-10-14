@@ -12,6 +12,11 @@ TITLE_PATTERN_REQUIRED_GROUPS = frozenset(
 )
 
 
+def compile_title_pattern(title_pattern: str) -> re.Pattern[str]:
+    # Titles must be matched with fullmatch: the pattern may lack ^ and $.
+    return re.compile(title_pattern, re.VERBOSE)
+
+
 class Rate(BaseModel, extra="forbid", frozen=True):
     # Half-days are billed as half a day at this price.
     day: float
@@ -71,7 +76,7 @@ class GcalSettings(BaseModel, extra="forbid", frozen=True):
     @model_validator(mode="after")
     def _check_title_pattern(self) -> Self:
         try:
-            pattern = re.compile(self.title_pattern, re.VERBOSE)
+            pattern = compile_title_pattern(self.title_pattern)
         except re.error as e:
             msg = f"title_pattern does not compile: {e}"
             raise ValueError(msg) from e

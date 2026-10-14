@@ -12,6 +12,8 @@ from typing import Any
 
 from yaml import YAMLError, safe_dump, safe_load
 
+from invoicez.gcal.settings import compile_title_pattern
+
 FREE_TEXT = "Free text"
 HTML_TEXT = "<p>Free text</p>"
 
@@ -33,10 +35,6 @@ _MIN_LEAK_LENGTH = 4
 _PSEUDONYM_RE = re.compile(
     r"(company|training|place|extra|ref|id|htmllink|other|value)_\d+"
 )
-
-
-def compile_title_pattern(title_pattern: str) -> re.Pattern[str]:
-    return re.compile(title_pattern, re.VERBOSE)
 
 
 def _with_case_shape(pseudonym: str, real: str) -> str:
