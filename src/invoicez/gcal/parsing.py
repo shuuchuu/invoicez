@@ -14,13 +14,12 @@ from pydantic import (
 )
 from yaml import YAMLError, safe_load
 
-from invoicez.gcal.diagnostics import Diagnostic
+from invoicez.gcal.diagnostics import Diagnostic, Level
 from invoicez.gcal.settings import DurationRules, GcalSettings, compile_title_pattern
 
 _HTML_RE = re.compile(r"<[a-zA-Z/][^>]*>")
 _SATURDAY = 5
 
-Level = Literal["info", "warning", "error"]
 Kind = Literal["day", "half_day"]
 
 

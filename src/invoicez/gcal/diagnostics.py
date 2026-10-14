@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+Level = Literal["info", "warning", "error"]
+
 
 class Diagnostic(BaseModel, extra="forbid", frozen=True):
     """A problem found in calendar data, reported instead of raised.
@@ -9,7 +11,7 @@ class Diagnostic(BaseModel, extra="forbid", frozen=True):
     Errors block billing what they concern; warnings and infos do not.
     """
 
-    level: Literal["info", "warning", "error"]
+    level: Level
     # None when the problem is not about a single event.
     event_id: str | None
     message: str
