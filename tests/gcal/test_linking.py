@@ -204,3 +204,15 @@ def test_write_link(tmp_path: Path) -> None:
     assert classification.state == "billed"
     with raises(InvoicezError, match="already has a source"):
         write_link(Link(engagement=engagement, invoice=invoice, how="exact"), "cal")
+
+
+def test_engagements_billed_by_hand_without_invoice_are_not_reviewed() -> None:
+    engagement = _engagement("old", (0, 1))
+    session = engagement.sessions[0].model_copy(
+        update={"description": SessionDescription(invoice="2020-02-001")}
+    )
+    [billed_by_hand], _ = group_sessions([session])
+
+    plan = plan_links([billed_by_hand], [])
+
+    assert plan.reviews == ()

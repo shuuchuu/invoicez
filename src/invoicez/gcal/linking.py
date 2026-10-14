@@ -170,7 +170,12 @@ def plan_links(
         engagement = engagements_by_id[engagement_id]
         numbers = tuple(i.document_number for i in found)
         if not found:
-            reviews.append(Review(engagement=engagement, reason="none", candidates=()))
+            # Already accounted for by its hand-written invoice number (e.g.
+            # one older than the repository).
+            if engagement.description.legacy_invoice is None:
+                reviews.append(
+                    Review(engagement=engagement, reason="none", candidates=())
+                )
         elif len(found) > 1:
             reviews.append(
                 Review(engagement=engagement, reason="several", candidates=numbers)
