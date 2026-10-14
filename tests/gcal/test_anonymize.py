@@ -9,6 +9,7 @@ from invoicez.gcal.anonymize import (
     anonymize,
     anonymized_settings,
     find_leaks,
+    select_fixture_events,
     summarize,
 )
 
@@ -105,10 +106,11 @@ def test_titles() -> None:
     assert [event["summary"] for event in events] == [
         "Company_0 - TRAINING_0 - cv - Extra_0",
         "-> Company_0 - TRAINING_0 - cv - Extra_0",
-        # Same company and training, case shape kept.
-        "company_0 - training_0 - paris",
+        # Same company and training, case shape kept; places other than CV
+        # pseudonymised.
+        "company_0 - training_0 - place_0",
         # Trainings are numbered per company.
-        "Company_1 - TRAINING_0 - nantes",
+        "Company_1 - TRAINING_0 - place_1",
         # Non-matching: shape kept, known company and training recognised.
         "Other_0",
         "Company_0 - TRAINING_0",
@@ -156,6 +158,7 @@ def test_no_real_value_left() -> None:
         "Martine",
         "Alpha",
         "Dentist",
+        "Nantes",
         "X-rays",
         "Rivoli",
         "abc123",
@@ -163,6 +166,8 @@ def test_no_real_value_left() -> None:
         "Confidential",
     ):
         assert real.casefold() not in dumped.casefold()
+    # Paris stays in time zones (Europe/Paris), not in titles.
+    assert all("paris" not in event["summary"].casefold() for event in events)
 
 
 def test_find_leaks_reports_real_values() -> None:
@@ -230,3 +235,27 @@ def test_find_leaks_ignores_pseudonym_shaped_values() -> None:
     events = [{"summary": "Company_0 - Training_0 - cv"}]
 
     assert find_leaks(events, {"Company_0": "Company_0", "Id_0": "abc123"}) == []
+
+
+def test_cv_place_is_kept_whatever_its_case() -> None:
+    event = {"summary": "Orsys - BDA - CV", **_all_day("2026-10-05", "2026-10-06")}
+
+    events, _ = anonymize([event], _TITLE_PATTERN)
+
+    assert events[0]["summary"] == "Company_0 - TRAINING_0 - CV"
+
+
+def test_select_fixture_events() -> None:
+    events, _ = anonymize(_EVENTS, _TITLE_PATTERN)
+
+    selected = select_fixture_events(events, _TITLE_PATTERN)
+
+    # The one-segment personal event is left out.
+    assert [event["id"] for event in selected] == [
+        "Id_0",
+        "Id_1",
+        "Id_2",
+        "Id_3",
+        "Id_5",
+        "Id_6",
+    ]

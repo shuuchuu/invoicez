@@ -4,7 +4,6 @@ Pure functions, no Google imports: scripts/dump_gcal_fixture.py fetches the
 events and writes what these functions return.
 """
 
-import json
 import re
 from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
@@ -20,12 +19,20 @@ HTML_TEXT = "<p>Free text</p>"
 # counts), not the client's.
 _KEPT_DESCRIPTION_KEYS = frozenset(("invoice", "paid", "sent", "preparation_days"))
 _EVENT_TIME_KEYS = ("date", "dateTime", "timeZone")
+# Places that say how a session is given rather than where: kept, as billing
+# may depend on them. Others could point to a client and are pseudonymised.
+_KEPT_PLACES = frozenset(("cv",))
+# Non-matching titles kept in the fixture: two segments, the shape of titles
+# that may have been meant to match (decision D2). Others are personal events.
+_FIXTURE_OTHER_SEGMENTS = 2
 _HTML_RE = re.compile(r"<[a-zA-Z/][^>]*>")
 _SCALARS = (int, float, bool, date, type(None))
 # Shorter real values (e.g. "cv") are too likely to appear by chance.
 _MIN_LEAK_LENGTH = 4
 # Real values shaped like pseudonyms, when re-anonymising a fixture.
-_PSEUDONYM_RE = re.compile(r"(company|training|extra|ref|id|htmllink|other|value)_\d+")
+_PSEUDONYM_RE = re.compile(
+    r"(company|training|place|extra|ref|id|htmllink|other|value)_\d+"
+)
 
 
 def compile_title_pattern(title_pattern: str) -> re.Pattern[str]:
@@ -86,7 +93,10 @@ def _anonymize_title(match: re.Match[str], pseudonyms: Pseudonyms) -> str:
     company = match["company"]
     company_pseudonym = pseudonyms.get("Company", company)
     training = pseudonyms.get("Training", match["training"], scope=company.casefold())
-    title = f"{company_pseudonym} - {training} - {match['place']}"
+    place = match["place"]
+    if place.casefold() not in _KEPT_PLACES:
+        place = pseudonyms.get("Place", place)
+    title = f"{company_pseudonym} - {training} - {place}"
     if extra := match.groupdict().get("extra"):
         title += f" - {pseudonyms.get('Extra', extra)}"
     return f"-> {title}" if match["continuation"] else title
@@ -164,8 +174,8 @@ def anonymize(
 ) -> tuple[list[dict[str, Any]], Pseudonyms]:
     """Anonymise raw API events, keeping what parsing and grouping need.
 
-    Matching titles are rebuilt from pseudonymised groups (place and
-    continuation kept); other titles keep their " - " shape only and lose
+    Matching titles are rebuilt from pseudonymised groups (continuation and
+    the "CV" place kept); other titles keep their " - " shape only and lose
     their description. YAML descriptions keep their keys, with `ref` and
     unknown string values pseudonymised; free text and HTML become
     placeholders. Only ids, links, status, start and end are kept otherwise.
@@ -195,11 +205,36 @@ def anonymize(
     return [anonymized for _, anonymized in anonymized_events], pseudonyms
 
 
+def select_fixture_events(
+    anonymized_events: Sequence[Mapping[str, Any]], title_pattern: str
+) -> list[Mapping[str, Any]]:
+    """Keep the events worth committing: matching titles and two-segment ones.
+
+    Returns:
+        The selected events, in the same order.
+    """
+    pattern = compile_title_pattern(title_pattern)
+    return [
+        event
+        for event in anonymized_events
+        if pattern.fullmatch(summary := event.get("summary", ""))
+        or len(summary.split(" - ")) == _FIXTURE_OTHER_SEGMENTS
+    ]
+
+
 def find_leaks(
     anonymized_events: Sequence[Mapping[str, Any]], mapping: Mapping[str, str]
 ) -> list[str]:
-    """Return the real values still present in the anonymised events."""
-    dumped = json.dumps(anonymized_events, ensure_ascii=False, default=str).casefold()
+    """Return the real values still present in the anonymised titles and descriptions.
+
+    Only these carry free text: ids and links are always replaced, and time
+    zones (e.g. "Europe/Paris") would flag places.
+    """
+    dumped = "\n".join(
+        str(event.get(key, ""))
+        for event in anonymized_events
+        for key in ("summary", "description")
+    ).casefold()
     return sorted(
         {
             real

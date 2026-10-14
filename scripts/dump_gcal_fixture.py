@@ -5,9 +5,9 @@ Run from the data repo (its settings.yml must have gcal.title_pattern):
     uv run --project ../invoicez-gcal-port --extra gcal \
         ../invoicez-gcal-port/scripts/dump_gcal_fixture.py
 
-Writes events.anonymized.json, settings.anonymized.yml, summary.txt and
-mapping.json (pseudonym -> real value, for your eyes only) outside of any git
-repository.
+Writes events.anonymized.json (matching and two-segment events only),
+settings.anonymized.yml, summary.txt (all events) and mapping.json (pseudonym
+-> real value, for your eyes only) outside of any git repository.
 """
 
 import json
@@ -24,6 +24,7 @@ from invoicez.gcal.anonymize import (
     anonymize,
     anonymized_settings,
     find_leaks,
+    select_fixture_events,
     summarize,
 )
 from invoicez.gcal.google import (
@@ -82,18 +83,21 @@ def main(
         calendar_id = _choose_calendar(service)
     events = fetch_events(service, calendar_id)
 
-    anonymized, pseudonyms = anonymize(events, gcal_section["title_pattern"])
+    title_pattern = gcal_section["title_pattern"]
+    anonymized, pseudonyms = anonymize(events, title_pattern)
+    fixture = select_fixture_events(anonymized, title_pattern)
     section, unknown_trainings = anonymized_settings(gcal_section, pseudonyms)
 
+    # Only the events worth committing: the file reviewed is the file used.
     (output / "events.anonymized.json").write_text(
-        json.dumps(anonymized, ensure_ascii=False, indent=2), encoding="utf8"
+        json.dumps(fixture, ensure_ascii=False, indent=2), encoding="utf8"
     )
     (output / "settings.anonymized.yml").write_text(
         safe_dump({"gcal": section}, allow_unicode=True, sort_keys=False),
         encoding="utf8",
     )
     (output / "summary.txt").write_text(
-        summarize(anonymized, gcal_section["title_pattern"]), encoding="utf8"
+        summarize(anonymized, title_pattern), encoding="utf8"
     )
     mapping = output / "mapping.json"
     mapping.touch(mode=0o600, exist_ok=True)
@@ -102,11 +106,11 @@ def main(
         json.dumps(pseudonyms.mapping, ensure_ascii=False, indent=2), encoding="utf8"
     )
 
-    print(f"Dumped {len(events)} events to {output}")
+    print(f"Dumped {len(fixture)} of {len(events)} events to {output}")
     print((output / "summary.txt").read_text(encoding="utf8"), end="")
     for training in unknown_trainings:
         print(f"WARNING: no rate found for {training} (left TODO in settings).")
-    if leaks := find_leaks(anonymized, pseudonyms.mapping):
+    if leaks := find_leaks(fixture, pseudonyms.mapping):
         print(
             f"WARNING: {len(leaks)} real value(s) still appear in the events, "
             f"check them before using the dump: {', '.join(map(repr, leaks))}"
