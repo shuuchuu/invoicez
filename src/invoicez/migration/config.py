@@ -7,7 +7,6 @@ from typing import Any
 _DROPPED_TOP_LEVEL_KEYS = ("rates", "trainings", "name_template", "title_pattern")
 
 _TODO = "TODO"
-_DEFAULT_RATE_TIER = "default"
 
 # Companies known to invoice against a contract (BT-12) rather than the
 # default purchase order (BT-13).
@@ -248,10 +247,16 @@ def _migrate_trainings(
     trainings: dict[str, Any] = {}
     for token, old_training in old_trainings.items():
         company = old_training["company"]
-        tier = old_training.get("rate", _DEFAULT_RATE_TIER)
-        rate = rate_names.get((company, tier))
-        if rate is None:
-            rate = _TODO
+        tier = old_training.get("rate")
+        # The old config implied the "default" tier when rate was missing;
+        # settings.yml has no fallback rate, so the choice is left to the user.
+        rate = _TODO if tier is None else rate_names.get((company, tier), _TODO)
+        if tier is None:
+            warnings.append(
+                f"trainings.{token}.rate: missing (the old config implied "
+                "'default'); pick one explicitly."
+            )
+        elif rate == _TODO:
             warnings.append(
                 f"trainings.{token}.rate: no rate {tier!r} for company {company!r}."
             )

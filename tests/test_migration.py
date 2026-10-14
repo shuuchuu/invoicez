@@ -4,6 +4,7 @@ from shutil import copy
 from typing import Any
 
 from git import Repo
+from pydantic import ValidationError
 from pytest import mark, raises
 from yaml import safe_dump, safe_load
 
@@ -200,12 +201,14 @@ def test_migrate_gcal_settings_trainings() -> None:
 
     assert section["trainings"] == {
         "orsys": {
-            "bda": {"name": "Big Data Analytics", "rate": "default"},
+            # No rate in the old config: no implied "default" either.
+            "bda": {"name": "Big Data Analytics", "rate": "TODO"},
             "drn": {"name": "Deep Learning", "rate": "orsys-t2"},
         },
         "sparks": {"pav": {"name": "Python avancé", "rate": "sparks-t2"}},
         "eni": {"ml1": {"name": "Machine Learning", "rate": "TODO"}},
     }
+    assert any(w.startswith("trainings.bda.rate: missing") for w in warnings)
     assert any(w.startswith("trainings.ml1.rate:") for w in warnings)
 
 
@@ -221,6 +224,9 @@ def test_migrated_gcal_settings_are_valid_once_filled() -> None:
     assert any(w.startswith("templates:") for w in warnings)
     section["start_date"] = "2026-10-01"
     section["templates"] = dict.fromkeys(section["templates"], "x")
+    with raises(ValidationError, match=r"orsys\.bda: 'TODO'"):
+        GcalSettings.model_validate(section)
+    section["trainings"]["orsys"]["bda"]["rate"] = "default"
     settings = GcalSettings.model_validate(section)
     assert settings.trainings["orsys"]["drn"].rate == "orsys-t2"
 

@@ -1,6 +1,6 @@
 # Anonymised from the author's calendar settings by scripts/dump_gcal_fixture.py.
 # start_date is moved back so that every fixture engagement is considered, and
-# trainings missing from the real settings get the default rate.
+# trainings missing from the real settings get the test-only rate "fixture".
 gcal:
   start_date: 2020-01-01
   title_pattern: |
@@ -30,6 +30,9 @@ gcal:
     half_day_line: "Journée de formation"
     preparation_line: "Journée de préparation"
   rates:
+    fixture:
+      day: 1000
+      preparation_day: 400
     default:
       day: 690
       preparation_day: 500
@@ -51,42 +54,42 @@ gcal:
       training_4: {name: Training 4 of Company_0, rate: t2}
       training_5: {name: Training 5 of Company_0, rate: t2}
       training_6: {name: Training 6 of Company_0, rate: default}
-      training_7: {name: Training 7 of Company_0, rate: default}
-      training_8: {name: Training 8 of Company_0, rate: default}
-      training_9: {name: Training 9 of Company_0, rate: default}
-      training_10: {name: Training 10 of Company_0, rate: default}
-      training_11: {name: Training 11 of Company_0, rate: default}
-      training_12: {name: Training 12 of Company_0, rate: default}
-      training_13: {name: Training 13 of Company_0, rate: default}
-      training_14: {name: Training 14 of Company_0, rate: default}
+      training_7: {name: Training 7 of Company_0, rate: fixture}
+      training_8: {name: Training 8 of Company_0, rate: fixture}
+      training_9: {name: Training 9 of Company_0, rate: fixture}
+      training_10: {name: Training 10 of Company_0, rate: fixture}
+      training_11: {name: Training 11 of Company_0, rate: fixture}
+      training_12: {name: Training 12 of Company_0, rate: fixture}
+      training_13: {name: Training 13 of Company_0, rate: fixture}
+      training_14: {name: Training 14 of Company_0, rate: fixture}
     company_1:
-      training_0: {name: Training 0 of Company_1, rate: default}
+      training_0: {name: Training 0 of Company_1, rate: fixture}
       training_1: {name: Training 1 of Company_1, rate: default}
       training_2: {name: Training 2 of Company_1, rate: default}
       training_3: {name: Training 3 of Company_1, rate: default}
-      training_4: {name: Training 4 of Company_1, rate: default}
-      training_5: {name: Training 5 of Company_1, rate: default}
-      training_6: {name: Training 6 of Company_1, rate: default}
-      training_7: {name: Training 7 of Company_1, rate: default}
-      training_8: {name: Training 8 of Company_1, rate: default}
-      training_9: {name: Training 9 of Company_1, rate: default}
-      training_10: {name: Training 10 of Company_1, rate: default}
-      training_11: {name: Training 11 of Company_1, rate: default}
-      training_12: {name: Training 12 of Company_1, rate: default}
+      training_4: {name: Training 4 of Company_1, rate: fixture}
+      training_5: {name: Training 5 of Company_1, rate: fixture}
+      training_6: {name: Training 6 of Company_1, rate: fixture}
+      training_7: {name: Training 7 of Company_1, rate: fixture}
+      training_8: {name: Training 8 of Company_1, rate: fixture}
+      training_9: {name: Training 9 of Company_1, rate: fixture}
+      training_10: {name: Training 10 of Company_1, rate: fixture}
+      training_11: {name: Training 11 of Company_1, rate: fixture}
+      training_12: {name: Training 12 of Company_1, rate: fixture}
     company_2:
-      training_0: {name: Training 0 of Company_2, rate: default}
-      training_1: {name: Training 1 of Company_2, rate: default}
+      training_0: {name: Training 0 of Company_2, rate: fixture}
+      training_1: {name: Training 1 of Company_2, rate: fixture}
     company_3:
       training_0: {name: Training 0 of Company_3, rate: default}
-      training_1: {name: Training 1 of Company_3, rate: default}
+      training_1: {name: Training 1 of Company_3, rate: fixture}
     company_4:
-      training_0: {name: Training 0 of Company_4, rate: default}
+      training_0: {name: Training 0 of Company_4, rate: fixture}
     company_5:
-      training_0: {name: Training 0 of Company_5, rate: default}
+      training_0: {name: Training 0 of Company_5, rate: fixture}
     company_6:
-      training_0: {name: Training 0 of Company_6, rate: default}
-      training_1: {name: Training 1 of Company_6, rate: default}
+      training_0: {name: Training 0 of Company_6, rate: fixture}
+      training_1: {name: Training 1 of Company_6, rate: fixture}
     company_7:
-      training_0: {name: Training 0 of Company_7, rate: default}
-      training_1: {name: Training 1 of Company_7, rate: default}
-      training_2: {name: Training 2 of Company_7, rate: default}
+      training_0: {name: Training 0 of Company_7, rate: fixture}
+      training_1: {name: Training 1 of Company_7, rate: fixture}
+      training_2: {name: Training 2 of Company_7, rate: fixture}
