@@ -27,6 +27,8 @@ version = "4.1.1"
 dev = [
   "bumpver >= 2025.1131",
   "doit >= 0.37",
+  "google-api-python-client >= 2",
+  "google-auth-oauthlib >= 1",
   "pdfminer-six >= 20260107",
   "pytest >= 8",
   "ruff >= 0.11",
@@ -36,6 +38,12 @@ dev = [
 
 [project.scripts]
 invoicez = "invoicez.cli:main"
+
+[project.optional-dependencies]
+gcal = [
+  "google-api-python-client >= 2",
+  "google-auth-oauthlib >= 1",
+]
 
 [tool.ruff]
 target-version = "py312"
