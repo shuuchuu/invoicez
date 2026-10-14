@@ -133,7 +133,7 @@ def test_days_and_half_days(settings: GcalSettings) -> None:
     # Half-days are billed as half a day at the day rate, as in the data repo.
     assert pricing.days == approx(3.5)
     assert pricing.lines == (
-        _line(0, None, 0.5, 690, "Journée Big Data, demi (0.5)"),
+        _line(0, None, 0.5, 690, "Journée Big Data, demi (0,5)"),
         _line(1, 2, 2, 690, "Journée Big Data (2)"),
         _line(3, 4, 1, 690, "Journée Big Data, demi (1)"),
     )
@@ -170,7 +170,7 @@ def test_preparation(settings: GcalSettings) -> None:
     assert pricing.lines == (
         _line(0, 1, 2, 690, "Journée Big Data (2)"),
         InvoiceLine(
-            n=1.5, pu=500, unit="DAY", description="Préparation Big Data (1.5)"
+            n=1.5, pu=500, unit="DAY", description="Préparation Big Data (1,5)"
         ),
     )
 
@@ -201,6 +201,11 @@ def test_unknown_company_or_training(settings: GcalSettings) -> None:
 
 def test_render_template() -> None:
     assert render_template("{{ days }} jours", days=number(2.0)) == "2 jours"
+    assert render_template("{{ days }} jours", days=number(1.5)) == "1,5 jours"
+    assert (
+        render_template("{% if days > 1 %}{{ days * 2 }}{% endif %}", days=number(1.5))
+        == "3.0"
+    )
     with raises(InvoicezError, match="'dayz' is undefined"):
         render_template("{{ dayz }} jours", days=2)
     with raises(InvoicezError, match="gcal template"):

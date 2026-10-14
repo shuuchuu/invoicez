@@ -29,9 +29,18 @@ class Pricing(BaseModel, extra="forbid", frozen=True):
     lines: tuple[InvoiceLine, ...]
 
 
-def number(value: float) -> int | float:
-    """Return value as an int when whole, so that it renders as 2, not 2.0."""
-    return int(value) if float(value).is_integer() else value
+class FrenchNumber(float):
+    """A number that templates print the French way: 2, 1,5."""
+
+    __slots__ = ()
+
+    def __str__(self) -> str:
+        return f"{float(self):g}".replace(".", ",")
+
+
+def number(value: float) -> FrenchNumber:
+    # Still a float, so templates can compare and compute with it.
+    return FrenchNumber(value)
 
 
 def render_template(template: str, **context: Any) -> str:
