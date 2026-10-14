@@ -64,7 +64,7 @@ class OrphanedDocument(BaseModel, extra="forbid", frozen=True):
     missing_event_ids: tuple[str, ...]
 
 
-def _invoices(git_dir: Path) -> Iterator[tuple[Path, dict[str, Any]]]:
+def iter_invoices(git_dir: Path) -> Iterator[tuple[Path, dict[str, Any]]]:
     # Invoices and credit notes; quotes are numbered apart and never billed.
     for path in sorted(git_dir.glob("**/*.yml")):
         try:
@@ -93,7 +93,7 @@ def scan_documents(git_dir: Path) -> DocumentIndex:
     documents: dict[str, GcalDocument] = {}
     cancelled: set[str] = set()
     paths: dict[str, Path] = {}
-    for path, content in _invoices(git_dir):
+    for path, content in iter_invoices(git_dir):
         number = str(content["document_number"])
         if number in paths:
             msg = f"{paths[number]} and {path} share the number {number}"

@@ -11,6 +11,12 @@ from yaml import safe_dump
 from invoicez.exceptions import InvoicezError
 from invoicez.gcal.diagnostics import Diagnostic
 from invoicez.gcal.drafting import draft, draft_path
+from invoicez.gcal.linking import (
+    LinkPlan,
+    plan_links,
+    scan_unlinked_invoices,
+    write_link,
+)
 from invoicez.gcal.loading import (
     Analysis,
     EngagementStatus,
@@ -397,3 +403,122 @@ def bill(
         f"skipped, {outcomes.count('failed')} failed."
     )
     return 1 if "failed" in outcomes else 0
+
+
+def _parse_pairs(pairs: tuple[str, ...]) -> dict[str, str]:
+    parsed: dict[str, str] = {}
+    for pair in pairs:
+        engagement_id, separator, number = pair.partition("=")
+        if not separator or not engagement_id or not number:
+            msg = f"--pair {pair}: expected ENGAGEMENT_ID=DOCUMENT_NUMBER"
+            raise InvoicezError(msg)
+        parsed[engagement_id] = number
+    return parsed
+
+
+def _print_plan(console: Console, plan: LinkPlan, git_dir: Path) -> None:
+    links = Table(
+        "Start", "End", "Company", "Training", "Ref", "Invoice", "File", "How",
+        title="Links",
+    )  # fmt: skip
+    for link in plan.links:
+        e = link.engagement
+        links.add_row(
+            str(e.start),
+            str(e.end),
+            e.company,
+            e.training,
+            e.description.ref or "",
+            link.invoice.document_number,
+            str(link.invoice.path.relative_to(git_dir)),
+            link.how,
+        )
+    console.print(links)
+    if plan.reviews:
+        reviews = Table(
+            "Start", "End", "Company", "Training", "Ref", "Reason", "Candidates", "Id",
+            title="To review (--pair ID=NUMBER, or fix the calendar or invoice)",
+        )  # fmt: skip
+        for review in plan.reviews:
+            e = review.engagement
+            reviews.add_row(
+                str(e.start),
+                str(e.end),
+                e.company,
+                e.training,
+                e.description.ref or "",
+                review.reason,
+                ", ".join(review.candidates),
+                e.id,
+            )
+        console.print(reviews)
+    if plan.unmatched:
+        unmatched = Table(
+            "Invoice", "File", "First day", "Last day",
+            title="Invoices matching no engagement",
+        )  # fmt: skip
+        for invoice in plan.unmatched:
+            unmatched.add_row(
+                invoice.document_number,
+                str(invoice.path.relative_to(git_dir)),
+                str(min(invoice.days)),
+                str(max(invoice.days)),
+            )
+        console.print(unmatched)
+
+
+@app.command
+def link(
+    *,
+    write: bool = False,
+    pair: tuple[str, ...] = (),
+    events: Path | None = None,
+) -> None:
+    """Link invoices billed before invoicez read the calendar to their events.
+
+    Dry run by default: lists the links it would make, by the days invoices
+    bill, and what needs a decision. --write appends a gcal source to each
+    linked invoice, leaving the rest of the file as is; gcal.start_date can
+    then go back to the first invoice.
+
+    Args:
+        write: Append the sources to the linked invoices.
+        pair: Link an engagement to an invoice by hand, as
+            ENGAGEMENT_ID=DOCUMENT_NUMBER (the Id column); repeatable.
+        events: Read the events from this JSON file instead of Google Calendar.
+
+    Raises:
+        InvoicezError: If gcal.calendar_id is not set, or a pair is invalid.
+    """
+    paths = Paths()
+    context = load_gcal(paths.settings, paths.variables)
+    calendar_id = context.gcal.calendar_id
+    if calendar_id is None:
+        msg = "gcal.calendar_id is not set in settings.yml: see invoicez gcal calendars"
+        raise InvoicezError(msg)
+    pairs = _parse_pairs(pair)
+    today = _today()
+    analysis = analyse(
+        load_events(context.gcal, events_file=events),
+        context.gcal,
+        scan_documents(paths.git_dir),
+        today=today,
+    )
+    engagements = [
+        s.engagement
+        for s in analysis.engagements
+        if not s.classification.documents and s.engagement.end <= today
+    ]
+    plan = plan_links(engagements, scan_unlinked_invoices(paths.git_dir), pairs)
+
+    console = Console()
+    _print_plan(console, plan, paths.git_dir)
+    if write:
+        for found in plan.links:
+            write_link(found, calendar_id)
+        console.print(f"\nLinked {len(plan.links)} invoices.")
+    else:
+        console.print(
+            f"\n{len(plan.links)} links, {len(plan.reviews)} to review, "
+            f"{len(plan.unmatched)} invoices unmatched. Add --write to link."
+        )

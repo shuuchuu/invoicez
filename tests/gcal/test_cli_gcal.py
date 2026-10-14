@@ -362,3 +362,36 @@ def test_bill_reports_unescaped_latex(
     assert "unescaped '&'" in output
     assert "0 written, 0 skipped, 1 failed." in output
     assert _documents(data_dir) == []
+
+
+def test_link(data_dir: Path, capsys: Any) -> None:
+    invoice = data_dir / "gcal-ymls" / "2026" / "Facture-2026-10-003-Company_0-X.yml"
+    invoice.parent.mkdir(parents=True)
+    text = (
+        "document_number: 2026-10-003\n"
+        "products:\n"
+        "- {start: 2026-10-12, end: 2026-10-14, n: 3, pu: 690, unit: DAY, "
+        "description: Jour}\n"
+    )
+    invoice.write_text(text, encoding="utf8")
+
+    assert _run("link", "--events", EVENTS) == 0
+    output = capsys.readouterr().out
+    assert "2026-10-003" in output
+    assert "│ exact" in output
+    assert "Add --write to link." in output
+    assert invoice.read_text(encoding="utf8") == text
+
+    assert _run("link", "--write", "--events", EVENTS) == 0
+    assert "Linked 1 invoices." in capsys.readouterr().out
+    assert invoice.read_text(encoding="utf8").startswith(text + "source:\n")
+
+    _run("status", "--all", "--events", EVENTS)
+    output = capsys.readouterr().out
+    assert "│ unbilled " not in output
+    assert output.count("│ billed ") == 1
+
+
+def test_link_invalid_pair(data_dir: Path) -> None:
+    with raises(InvoicezError, match="expected ENGAGEMENT_ID=DOCUMENT_NUMBER"):
+        main("gcal", "link", "--pair", "Id_355", "--events", EVENTS)
