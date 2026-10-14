@@ -31,8 +31,10 @@ class UnlinkedInvoice(BaseModel, extra="forbid", frozen=True):
 class Link(BaseModel, extra="forbid", frozen=True):
     engagement: Engagement
     invoice: UnlinkedInvoice
-    # exact: same days; overlap: the only invoice sharing days; pair: by hand.
-    how: Literal["exact", "overlap", "pair"]
+    # exact: same days; description: the invoice its description names
+    # (invoice: …) among those sharing days; overlap: the only invoice sharing
+    # days; pair: by hand.
+    how: Literal["exact", "overlap", "description", "pair"]
 
 
 class Review(BaseModel, extra="forbid", frozen=True):
@@ -164,32 +166,40 @@ def plan_links(
         days = engagement_days(engagement)
         candidates[engagement.id] = [i for i in available if i.days & days]
 
-    single = [c[0].document_number for c in candidates.values() if len(c) == 1]
+    # Each engagement's choice: the invoice its description names, if it is a
+    # candidate, else its only candidate.
+    choices: dict[str, UnlinkedInvoice] = {}
+    for engagement_id, found in candidates.items():
+        hint = engagements_by_id[engagement_id].description.legacy_invoice
+        named = [i for i in found if i.document_number == hint]
+        if named or len(found) == 1:
+            choices[engagement_id] = (named or found)[0]
+    chosen = [invoice.document_number for invoice in choices.values()]
+
     reviews: list[Review] = []
     for engagement_id, found in candidates.items():
         engagement = engagements_by_id[engagement_id]
-        numbers = tuple(i.document_number for i in found)
-        if not found:
-            # Already accounted for by its hand-written invoice number (e.g.
-            # one older than the repository).
-            if engagement.description.legacy_invoice is None:
-                reviews.append(
-                    Review(engagement=engagement, reason="none", candidates=())
-                )
-        elif len(found) > 1:
-            reviews.append(
-                Review(engagement=engagement, reason="several", candidates=numbers)
+        choice = choices.get(engagement_id)
+        if choice is not None and chosen.count(choice.document_number) == 1:
+            how = (
+                "exact"
+                if choice.days == engagement_days(engagement)
+                else "description"
+                if choice.document_number == engagement.description.legacy_invoice
+                else "overlap"
             )
-        elif single.count(numbers[0]) > 1:
+            links.append(Link(engagement=engagement, invoice=choice, how=how))
+        elif engagement.description.legacy_invoice is None:
+            reason = "shared" if choice else "several" if found else "none"
+            numbers = tuple(i.document_number for i in found)
             reviews.append(
-                Review(engagement=engagement, reason="shared", candidates=numbers)
+                Review(engagement=engagement, reason=reason, candidates=numbers)
             )
-        else:
-            how = "exact" if found[0].days == engagement_days(engagement) else "overlap"
-            links.append(Link(engagement=engagement, invoice=found[0], how=how))
+        # Otherwise accounted for by its hand-written invoice number: one older
+        # than the repository, or one invoice for several engagements.
 
     used = {link.invoice.document_number for link in links} | {
-        n for review in reviews for n in review.candidates
+        invoice.document_number for found in candidates.values() for invoice in found
     }
     links.sort(key=lambda link: link.engagement.start)
     reviews.sort(key=lambda review: review.engagement.start)

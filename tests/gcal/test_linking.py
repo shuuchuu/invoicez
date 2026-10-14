@@ -216,3 +216,50 @@ def test_engagements_billed_by_hand_without_invoice_are_not_reviewed() -> None:
     plan = plan_links([billed_by_hand], [])
 
     assert plan.reviews == ()
+
+
+def _with_invoice(engagement: Engagement, number: str) -> Engagement:
+    root = engagement.sessions[0].model_copy(
+        update={"description": SessionDescription(invoice=number)}
+    )
+    return engagement.model_copy(update={"sessions": (root, *engagement.sessions[1:])})
+
+
+def test_description_names_the_invoice() -> None:
+    # Morning and afternoon groups on the same days, billed apart.
+    morning = _with_invoice(_engagement("morning", (0, 2)), "B")
+    afternoon = _with_invoice(_engagement("afternoon", (0, 2)), "A")
+
+    # Days sharing, not equal: the description decides, and says so.
+    plan = plan_links([morning, afternoon], [_invoice("A", 0), _invoice("B", 0)])
+
+    assert [
+        (link.engagement.id, link.invoice.document_number, link.how)
+        for link in plan.links
+    ] == [
+        ("morning", "B", "description"),
+        ("afternoon", "A", "description"),
+    ]
+    assert plan.reviews == plan.unmatched == ()
+
+
+def test_one_invoice_for_engagements_billed_by_hand() -> None:
+    # Morning and afternoon groups billed together: not linkable one to one.
+    morning = _with_invoice(_engagement("morning", (0, 2)), "A")
+    afternoon = _with_invoice(_engagement("afternoon", (0, 2)), "A")
+
+    plan = plan_links([morning, afternoon], [_invoice("A", 0, 1)])
+
+    assert plan.links == plan.reviews == ()
+    assert plan.unmatched == ()
+
+
+def test_description_naming_no_candidate_is_ignored() -> None:
+    # A typo in the hand-written number (2O21 for 2021): days decide.
+    engagement = _with_invoice(_engagement("e", (0, 2)), "2O21-11-003")
+
+    plan = plan_links([engagement], [_invoice("2021-11-005", 0, 1)])
+
+    assert [(link.invoice.document_number, link.how) for link in plan.links] == [
+        ("2021-11-005", "exact")
+    ]
