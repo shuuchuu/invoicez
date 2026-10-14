@@ -96,6 +96,40 @@ def describe(event: dict) -> str:
     return f"{text}: {'; '.join(extras)}" if extras else text
 
 
+def _first(invoice: dict, codes: frozenset[str]) -> datetime | None:
+    # When the first event with one of these codes happened, if any did.
+    times = [
+        event["created_at"]
+        for event in invoice.get("events") or []
+        if event["status_code"] in codes
+    ]
+    return datetime.fromisoformat(min(times)) if times else None
+
+
+def emitted_at(invoice: dict) -> datetime | None:
+    """Return when the invoice was handed to the buyer's platform, if it was.
+
+    Args:
+        invoice: Invoice as returned by SuperPDP, with its events.
+
+    Returns:
+        When it was handed over, or None if it was not yet.
+    """
+    return _first(invoice, _EMITTED)
+
+
+def paid_at(invoice: dict) -> datetime | None:
+    """Return when the invoice was marked as paid (fr:212), if it was.
+
+    Args:
+        invoice: Invoice as returned by SuperPDP, with its events.
+
+    Returns:
+        When the status was recorded, or None if the invoice is not paid.
+    """
+    return _first(invoice, frozenset({PAID}))
+
+
 def undelivered_since(invoice: dict) -> datetime | None:
     """Return when the invoice went to the buyer's platform, if it never confirmed it.
 
@@ -108,5 +142,4 @@ def undelivered_since(invoice: dict) -> datetime | None:
     events = invoice.get("events") or []
     if any(event["status_code"] in _DELIVERED for event in events):
         return None
-    emitted = [e["created_at"] for e in events if e["status_code"] in _EMITTED]
-    return datetime.fromisoformat(min(emitted)) if emitted else None
+    return emitted_at(invoice)

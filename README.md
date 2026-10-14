@@ -108,7 +108,10 @@ the French way in templates (`2,5`). Documents hold LaTeX, so `&`, `%`, `$`,
 - All-day events count their days; timed events of 2.5 to 4 hours are
   half-days, of 6 to 9 hours days; others are reported, not billed.
 - The description may hold YAML: `ref` (the client's reference, also used in
-  the file name), `preparation_days`, and `invoice` (a number billed by hand).
+  the file name), `preparation_days`, `trainees` (the number of people trained,
+  copied to the invoice for `invoicez ledger`), and `invoice` (a number billed
+  by hand). `bill` asks for the reference and the trainees when they are
+  missing.
 
 ### Commands
 
@@ -159,6 +162,45 @@ the record of what was sent.
   with 1 on a problem.
 
 Expired or revoked SuperPDP tokens are renewed on the fly.
+
+## Ledger
+
+`invoicez ledger [YEAR...] [--csv]` lists the invoices of the given years
+(the current one by default) with their training days, trainees, amounts,
+estimated social contributions and income tax, net, and sending and payment
+dates, then totals each year. `--csv` writes the invoices as CSV instead.
+
+Invoices dated before `ledger.pivot_date` are read from a spreadsheet kept by
+hand (`ledger.spreadsheet`, an `.ods` file with one sheet per year and the
+columns `Facture`, `Entreprise`, `Formation`, `Jours`, `Stagiaires`, `HT` or
+`Principal HT` and `Frais HT`, `TVA`, `Envoyée`, `Payée`). Later ones are read
+from the documents, with their sending and payment (`fr:212`) dates from
+SuperPDP. Without a pivot date, every invoice is read from the documents.
+
+From the documents, lines whose description matches `expense_pattern`
+(default `frais`) are expenses, and lines in `DAY` matching
+`training_day_pattern` (default `^Jour(née)? de (formation|certification)`)
+count as training days. The number of trainees is the `trainees` key of the
+document, set by `invoicez gcal bill` from the calendar event or by asking, or
+written by hand.
+
+Contributions take the rate in force on the invoice's date. The income tax of
+a year is spread over its invoices in order, each bearing what it adds at the
+top of the progressive scale; it assumes no other income in the household.
+
+```yaml
+ledger:
+  pivot_date: 2026-09-01
+  spreadsheet: invoices.ods
+  contribution_rates:
+    2025-01-01: 0.248
+    2026-01-01: 0.258
+  income_tax:
+    allowance: 0.34  # micro-BNC
+    shares: 1
+    brackets:  # per year of income: rate above each threshold, per share
+      2025: {11600: 0.11, 29579: 0.30, 84577: 0.41, 181917: 0.45}
+```
 
 ### Shell completion
 
