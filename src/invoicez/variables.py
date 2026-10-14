@@ -93,6 +93,14 @@ class InvoiceMeta(BaseModel, extra="forbid", frozen=True):
     type_code: str = "380"  # 380 Facture, 381 Avoir
 
 
+class GcalSource(BaseModel, extra="forbid", frozen=True):
+    kind: Literal["gcal"]
+    calendar_id: str
+    event_ids: list[str]
+    # Hash of the billed events, to detect calendar changes after billing.
+    fingerprint: str
+
+
 class Variables(BaseModel, extra="forbid", frozen=True):
     document_number: str
     date: date
@@ -105,6 +113,8 @@ class Variables(BaseModel, extra="forbid", frozen=True):
     reference: str | None = None
     # Overrides the due date computed from company.maximum_days (BT-9).
     payment_due_date: date | None = None
+    # What produced this document, for reconciliation. Not printed.
+    source: GcalSource | None = None
     tva: TVA
     user: Seller
     company: Company

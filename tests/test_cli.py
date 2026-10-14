@@ -7,6 +7,7 @@ from xml.etree import ElementTree
 from facturx import get_xml_from_pdf
 from git import Repo
 from pdfminer.high_level import extract_pages, extract_text
+from pydantic import ValidationError
 from pytest import fixture, mark, raises
 from yaml import safe_dump, safe_load
 from yaml import safe_load as yaml_safe_load
@@ -225,3 +226,38 @@ def test_payment_due_date_not_inherited_by_credit_note() -> None:
 
     # 2021-01-10 + company2's maximum_days (30).
     assert _xml_due_date(credit_note) == "20210209"
+
+
+def test_source_does_not_change_the_xml() -> None:
+    paths = Paths()
+    global_data = safe_load(paths.variables.read_text(encoding="utf8"))
+    document_path = Path("company2/2020-10-002-Entreprise client.yml")
+    document_data = safe_load(document_path.read_text(encoding="utf8"))
+    source = {
+        "kind": "gcal",
+        "calendar_id": "calendar@group.calendar.google.com",
+        "event_ids": ["event1", "event2"],
+        "fingerprint": "0" * 64,
+    }
+
+    without_source = Variables.from_mappings(global_data, document_data)
+    with_source = Variables.from_mappings(
+        global_data, {**document_data, "source": source}
+    )
+
+    assert with_source.source is not None
+    assert with_source.source.event_ids == ["event1", "event2"]
+    assert build_xml("a", with_source, paths.build_dir) == build_xml(
+        "b", without_source, paths.build_dir
+    )
+
+
+def test_source_rejects_unknown_kind() -> None:
+    paths = Paths()
+    global_data = safe_load(paths.variables.read_text(encoding="utf8"))
+    document_path = Path("company2/2020-10-002-Entreprise client.yml")
+    document_data = safe_load(document_path.read_text(encoding="utf8"))
+    source = {"kind": "other", "calendar_id": "c", "event_ids": [], "fingerprint": ""}
+
+    with raises(ValidationError):
+        Variables.from_mappings(global_data, {**document_data, "source": source})
