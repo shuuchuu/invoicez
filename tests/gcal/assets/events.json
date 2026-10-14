@@ -1,0 +1,2517 @@
+[
+  {
+    "id": "Id_69",
+    "htmlLink": "HTMLLink_68",
+    "status": "confirmed",
+    "start": {
+      "date": "2020-01-21"
+    },
+    "end": {
+      "date": "2020-01-23"
+    },
+    "summary": "Company_0 - TRAINING_0 - Place_0",
+    "description": "ref: REF_0\ninvoice: 2020-02-001\nsent: 2020-02-04\npaid: 2020-02-27\n"
+  },
+  {
+    "id": "Id_71",
+    "htmlLink": "HTMLLink_70",
+    "status": "confirmed",
+    "start": {
+      "date": "2020-09-21"
+    },
+    "end": {
+      "date": "2020-09-23"
+    },
+    "summary": "Company_0 - TRAINING_0 - Place_0 - Extra_0",
+    "description": "ref: REF_1\ninvoice: 2020-10-003\nsent: 2020-10-07\npaid: 2020-10-28\n"
+  },
+  {
+    "id": "Id_72",
+    "htmlLink": "HTMLLink_71",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2020-11-04T09:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2020-11-04T12:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Company_0 - TRAINING_0 - CV - Extra_0",
+    "description": "ref: REF_2\npreparation_days: 2\ninvoice: 2020-11-005\nsent: 2020-11-25\npaid: 2020-12-30\n"
+  },
+  {
+    "id": "Id_73",
+    "htmlLink": "HTMLLink_72",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2020-11-05T09:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2020-11-05T12:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_0 - TRAINING_0 - CV - Extra_0"
+  },
+  {
+    "id": "Id_74",
+    "htmlLink": "HTMLLink_73",
+    "status": "confirmed",
+    "start": {
+      "date": "2020-11-09"
+    },
+    "end": {
+      "date": "2020-11-11"
+    },
+    "summary": "Company_0 - TRAINING_1 - CV",
+    "description": "ref: REF_3\ninvoice: 2020-11-001\nsent: 2020-11-10\npaid: 2020-12-01\n"
+  },
+  {
+    "id": "Id_75",
+    "htmlLink": "HTMLLink_74",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2020-11-12T09:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2020-11-12T12:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_0 - TRAINING_0 - CV - Extra_0",
+    "description": "Free text"
+  },
+  {
+    "id": "Id_76",
+    "htmlLink": "HTMLLink_75",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2020-11-13T09:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2020-11-13T12:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_0 - TRAINING_0 - CV - Extra_0"
+  },
+  {
+    "id": "Id_77",
+    "htmlLink": "HTMLLink_76",
+    "status": "confirmed",
+    "start": {
+      "date": "2020-11-17"
+    },
+    "end": {
+      "date": "2020-11-21"
+    },
+    "summary": "Company_0 - TRAINING_0 - CV",
+    "description": "ref: REF_2\ninvoice: 2020-11-02\nsent: 2020-11-20\npaid: 2020-12-30\n"
+  },
+  {
+    "id": "Id_78",
+    "htmlLink": "HTMLLink_77",
+    "status": "confirmed",
+    "start": {
+      "date": "2020-11-30"
+    },
+    "end": {
+      "date": "2020-12-03"
+    },
+    "summary": "Company_0 - TRAINING_2 - CV",
+    "description": "ref: REF_4\ninvoice: 2020-12-001\nsent: 2020-12-02\npaid: 2020-12-30\n"
+  },
+  {
+    "id": "Id_79",
+    "htmlLink": "HTMLLink_78",
+    "status": "confirmed",
+    "start": {
+      "date": "2020-12-14"
+    },
+    "end": {
+      "date": "2020-12-17"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV",
+    "description": "ref: REF_5\ninvoice: 2020-12-002\nsent: 2020-12-17\npaid: 2021-01-29\n"
+  },
+  {
+    "id": "Id_80",
+    "htmlLink": "HTMLLink_79",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-01-14"
+    },
+    "end": {
+      "date": "2021-01-15"
+    },
+    "summary": "Company_0 - TRAINING_3 - CV - Extra_1",
+    "description": "ref: REF_6\npreparation_days: 1\ninvoice: 2021-01-001\nsent: 2021-01-16\npaid: 2021-03-01\n"
+  },
+  {
+    "id": "Id_81",
+    "htmlLink": "HTMLLink_80",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2021-01-15T09:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2021-01-15T12:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_0 - TRAINING_3 - CV - Extra_1"
+  },
+  {
+    "id": "Id_83",
+    "htmlLink": "HTMLLink_82",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-03-01"
+    },
+    "end": {
+      "date": "2021-03-04"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV",
+    "description": "ref: REF_7\ninvoice: 2021-03-001\nsent: 2021-03-05\npaid: 2021-04-28\n"
+  },
+  {
+    "id": "Id_84",
+    "htmlLink": "HTMLLink_83",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-03-08"
+    },
+    "end": {
+      "date": "2021-03-10"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV",
+    "description": "ref: REF_8\ninvoice: 2021-03-002\nsent: 2021-03-14\npaid: 2021-05-03\n"
+  },
+  {
+    "id": "Id_85",
+    "htmlLink": "HTMLLink_84",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-03-25"
+    },
+    "end": {
+      "date": "2021-03-27"
+    },
+    "summary": "Company_0 - TRAINING_1 - CV",
+    "description": "ref: REF_3\ninvoice: 2021-03-003\nsent: 2021-03-26\npaid: 2021-04-28\n"
+  },
+  {
+    "id": "Id_88",
+    "htmlLink": "HTMLLink_87",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-04-08"
+    },
+    "end": {
+      "date": "2021-04-10"
+    },
+    "summary": "Company_0 - TRAINING_1 - CV",
+    "description": "ref: REF_3\ninvoice: 2021-04-001\nsent: 2021-04-09\npaid: 2021-04-28\n"
+  },
+  {
+    "id": "Id_89",
+    "htmlLink": "HTMLLink_88",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-04-12"
+    },
+    "end": {
+      "date": "2021-04-15"
+    },
+    "summary": "Company_2 - TRAINING_0 - CV",
+    "description": "ref: REF_9\ninvoice: 2021-04-002\nsent: 2021-04-22\npaid: 2021-06-14\n"
+  },
+  {
+    "id": "Id_90",
+    "htmlLink": "HTMLLink_89",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-05-17"
+    },
+    "end": {
+      "date": "2021-05-18"
+    },
+    "summary": "Company_0 - TRAINING_0 - CV - Extra_2",
+    "description": "ref: REF_2\ninvoice: 2021-05-001\nsent: 2021-05-21\npaid: 2021-06-29\n"
+  },
+  {
+    "id": "Id_91",
+    "htmlLink": "HTMLLink_90",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-05-19"
+    },
+    "end": {
+      "date": "2021-05-22"
+    },
+    "summary": "-> Company_0 - TRAINING_0 - CV - Extra_2"
+  },
+  {
+    "id": "Id_93",
+    "htmlLink": "HTMLLink_92",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-05-31"
+    },
+    "end": {
+      "date": "2021-06-03"
+    },
+    "summary": "Company_0 - TRAINING_4 - CV - Extra_3",
+    "description": "ref: REF_10\ninvoice: 2021-06-001\nsent: 2021-06-02\npaid: 2021-07-13\n"
+  },
+  {
+    "id": "Id_94",
+    "htmlLink": "HTMLLink_93",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-06-09"
+    },
+    "end": {
+      "date": "2021-06-12"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV",
+    "description": "ref: REF_11\ninvoice: 2021-06-002\nsent: 2021-06-11\npaid: 2021-07-27\n"
+  },
+  {
+    "id": "Id_95",
+    "htmlLink": "HTMLLink_94",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-06-14"
+    },
+    "end": {
+      "date": "2021-06-17"
+    },
+    "summary": "Company_1 - TRAINING_2 - CV",
+    "description": "ref: REF_12\ninvoice: 2021-06-003\nsent: 2021-06-16\npaid: 2021-08-03\n"
+  },
+  {
+    "id": "Id_96",
+    "htmlLink": "HTMLLink_95",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-06-28"
+    },
+    "end": {
+      "date": "2021-06-29"
+    },
+    "summary": "COMPANY_3 - TRAINING_0 - Place_1",
+    "description": "ref: Ref_13\ninvoice: 2021-06-004\nsent: 2021-06-28\npaid: 2021-08-03\n"
+  },
+  {
+    "id": "Id_97",
+    "htmlLink": "HTMLLink_96",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-07-07"
+    },
+    "end": {
+      "date": "2021-07-10"
+    },
+    "summary": "Company_0 - TRAINING_4 - Place_0 - Extra_4",
+    "description": "ref: REF_14\ninvoice: 2021-07-001\nsent: 2021-07-19\npaid: 2021-09-02\n"
+  },
+  {
+    "id": "Id_98",
+    "htmlLink": "HTMLLink_97",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-07-20"
+    },
+    "end": {
+      "date": "2021-07-24"
+    },
+    "summary": "Company_0 - TRAINING_0 - CV",
+    "description": "ref: REF_2\ninvoice: 2021-07-003\nsent: 2021-07-23\npaid: 2021-09-02\n"
+  },
+  {
+    "id": "Id_99",
+    "htmlLink": "HTMLLink_98",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-09-06"
+    },
+    "end": {
+      "date": "2021-09-09"
+    },
+    "summary": "Company_1 - TRAINING_3 - CV",
+    "description": "ref: REF_15\ninvoice: 2021-09-001\nsent: 2021-09-10\npaid: 2021-11-03\n"
+  },
+  {
+    "id": "Id_103",
+    "htmlLink": "HTMLLink_101",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-09-27"
+    },
+    "end": {
+      "date": "2021-09-30"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV",
+    "description": "ref: REF_16\ninvoice: 2021-10-001\nsent: 2021-10-07\npaid: 2021-11-22\n"
+  },
+  {
+    "id": "Id_104",
+    "htmlLink": "HTMLLink_102",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-10-05"
+    },
+    "end": {
+      "date": "2021-10-08"
+    },
+    "summary": "Company_0 - TRAINING_2 - Place_2 - Extra_5",
+    "description": "ref: REF_17\ninvoice: 2021-10-002\nsent: 2021-10-14\npaid: 2021-12-29\n"
+  },
+  {
+    "id": "Id_106",
+    "htmlLink": "HTMLLink_104",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-10-18"
+    },
+    "end": {
+      "date": "2021-10-21"
+    },
+    "summary": "Company_0 - TRAINING_4 - Place_3 - Extra_6",
+    "description": "ref: REF_18\ninvoice: 2021-10-003\nsent: 2021-10-18\npaid: 2021-12-29\n"
+  },
+  {
+    "id": "Id_107",
+    "htmlLink": "HTMLLink_105",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-11-02"
+    },
+    "end": {
+      "date": "2021-11-06"
+    },
+    "summary": "Company_0 - TRAINING_0 - Place_0",
+    "description": "ref: REF_0\ninvoice: 2021-11-001\nsent: 2021-11-06\npaid: 2021-12-15\n"
+  },
+  {
+    "id": "Id_108",
+    "htmlLink": "HTMLLink_106",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-11-08"
+    },
+    "end": {
+      "date": "2021-11-09"
+    },
+    "summary": "COMPANY_3 - TRAINING_0 - CV",
+    "description": "ref: ref_19\ninvoice: 2021-11-002\nsent: 2021-11-10\npaid: 2021-11-24\n"
+  },
+  {
+    "id": "Id_110",
+    "htmlLink": "HTMLLink_108",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-11-22"
+    },
+    "end": {
+      "date": "2021-11-24"
+    },
+    "summary": "Company_1 - TRAINING_4 - CV",
+    "description": "ref: REF_20\ninvoice: 2O21-11-003\nsent: 2O21-11-23\n"
+  },
+  {
+    "id": "Id_111",
+    "htmlLink": "HTMLLink_109",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-11-24"
+    },
+    "end": {
+      "date": "2021-11-27"
+    },
+    "summary": "Company_0 - TRAINING_2 - CV"
+  },
+  {
+    "id": "Id_112",
+    "htmlLink": "HTMLLink_110",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-12-01"
+    },
+    "end": {
+      "date": "2021-12-04"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV"
+  },
+  {
+    "id": "Id_115",
+    "htmlLink": "HTMLLink_113",
+    "status": "confirmed",
+    "start": {
+      "date": "2021-12-16"
+    },
+    "end": {
+      "date": "2021-12-18"
+    },
+    "summary": "Company_0 - TRAINING_5 - CV",
+    "description": "ref: REF_21\n"
+  },
+  {
+    "id": "Id_117",
+    "htmlLink": "HTMLLink_115",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-01-24"
+    },
+    "end": {
+      "date": "2022-01-27"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV",
+    "description": "ref: REF_22\n"
+  },
+  {
+    "id": "Id_118",
+    "htmlLink": "HTMLLink_116",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-02-01"
+    },
+    "end": {
+      "date": "2022-02-05"
+    },
+    "summary": "Company_1 - TRAINING_5 - Place_4 - Extra_7"
+  },
+  {
+    "id": "Id_120",
+    "htmlLink": "HTMLLink_118",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-02-07"
+    },
+    "end": {
+      "date": "2022-02-10"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV"
+  },
+  {
+    "id": "Id_123",
+    "htmlLink": "HTMLLink_121",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-03-14"
+    },
+    "end": {
+      "date": "2022-03-17"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_124",
+    "htmlLink": "HTMLLink_122",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-04-04"
+    },
+    "end": {
+      "date": "2022-04-07"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_125",
+    "htmlLink": "HTMLLink_123",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-04-12"
+    },
+    "end": {
+      "date": "2022-04-15"
+    },
+    "summary": "Company_1 - TRAINING_3 - Place_4 - Extra_7"
+  },
+  {
+    "id": "Id_126",
+    "htmlLink": "HTMLLink_124",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-04-20"
+    },
+    "end": {
+      "date": "2022-04-23"
+    },
+    "summary": "Company_0 - TRAINING_2 - CV - Extra_8",
+    "description": "ref: REF_4\n"
+  },
+  {
+    "id": "Id_127",
+    "htmlLink": "HTMLLink_125",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-04-25"
+    },
+    "end": {
+      "date": "2022-04-28"
+    },
+    "summary": "Company_0 - TRAINING_6 - CV",
+    "description": "ref: REF_23\n"
+  },
+  {
+    "id": "Id_130",
+    "htmlLink": "HTMLLink_128",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-06-13"
+    },
+    "end": {
+      "date": "2022-06-16"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV"
+  },
+  {
+    "id": "Id_131",
+    "htmlLink": "HTMLLink_129",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-07-05"
+    },
+    "end": {
+      "date": "2022-07-09"
+    },
+    "summary": "Company_0 - TRAINING_3 - Place_0",
+    "description": "ref: REF_24\n"
+  },
+  {
+    "id": "Id_132",
+    "htmlLink": "HTMLLink_130",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-07-11"
+    },
+    "end": {
+      "date": "2022-07-14"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_134",
+    "htmlLink": "HTMLLink_132",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-08-08"
+    },
+    "end": {
+      "date": "2022-08-11"
+    },
+    "summary": "Company_0 - TRAINING_6 - CV",
+    "description": "ref: REF_25\n"
+  },
+  {
+    "id": "Id_135",
+    "htmlLink": "HTMLLink_133",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-09-05"
+    },
+    "end": {
+      "date": "2022-09-08"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_139",
+    "htmlLink": "HTMLLink_137",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-11-07"
+    },
+    "end": {
+      "date": "2022-11-10"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_140",
+    "htmlLink": "HTMLLink_138",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-11-15"
+    },
+    "end": {
+      "date": "2022-11-19"
+    },
+    "summary": "Company_0 - TRAINING_3 - Place_5 - Extra_9"
+  },
+  {
+    "id": "Id_141",
+    "htmlLink": "HTMLLink_139",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-11-21"
+    },
+    "end": {
+      "date": "2022-11-24"
+    },
+    "summary": "COMPANY_3 - TRAINING_1 - CV"
+  },
+  {
+    "id": "Id_142",
+    "htmlLink": "HTMLLink_140",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-11-24"
+    },
+    "end": {
+      "date": "2022-11-26"
+    },
+    "summary": "Company_0 - TRAINING_1 - CV"
+  },
+  {
+    "id": "Id_143",
+    "htmlLink": "HTMLLink_141",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-11-30"
+    },
+    "end": {
+      "date": "2022-12-03"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV - Extra_10"
+  },
+  {
+    "id": "Id_144",
+    "htmlLink": "HTMLLink_142",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-12-05"
+    },
+    "end": {
+      "date": "2022-12-08"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV"
+  },
+  {
+    "id": "Id_146",
+    "htmlLink": "HTMLLink_144",
+    "status": "confirmed",
+    "start": {
+      "date": "2022-12-08"
+    },
+    "end": {
+      "date": "2022-12-10"
+    },
+    "summary": "Company_0 - TRAINING_1 - CV"
+  },
+  {
+    "id": "Id_149",
+    "htmlLink": "HTMLLink_147",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-03-06"
+    },
+    "end": {
+      "date": "2023-03-09"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_11"
+  },
+  {
+    "id": "Id_150",
+    "htmlLink": "HTMLLink_148",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-03-09"
+    },
+    "end": {
+      "date": "2023-03-11"
+    },
+    "summary": "Company_0 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_151",
+    "htmlLink": "HTMLLink_149",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-03-16"
+    },
+    "end": {
+      "date": "2023-03-18"
+    },
+    "summary": "-> Company_0 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_156",
+    "htmlLink": "HTMLLink_154",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-06-20"
+    },
+    "end": {
+      "date": "2023-06-24"
+    },
+    "summary": "Company_0 - TRAINING_3 - CV"
+  },
+  {
+    "id": "Id_157",
+    "htmlLink": "HTMLLink_155",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-06-26"
+    },
+    "end": {
+      "date": "2023-06-28"
+    },
+    "summary": "Company_0 - TRAINING_7 - Place_6 - Extra_12"
+  },
+  {
+    "id": "Id_158",
+    "htmlLink": "HTMLLink_156",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-06-29"
+    },
+    "end": {
+      "date": "2023-07-01"
+    },
+    "summary": "-> Company_0 - TRAINING_7 - Place_6 - Extra_12"
+  },
+  {
+    "id": "Id_159",
+    "htmlLink": "HTMLLink_157",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-07-04"
+    },
+    "end": {
+      "date": "2023-07-08"
+    },
+    "summary": "Company_0 - TRAINING_3 - CV"
+  },
+  {
+    "id": "Id_160",
+    "htmlLink": "HTMLLink_158",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-09-04"
+    },
+    "end": {
+      "date": "2023-09-07"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_10"
+  },
+  {
+    "id": "Id_162",
+    "htmlLink": "HTMLLink_160",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-09-07"
+    },
+    "end": {
+      "date": "2023-09-09"
+    },
+    "summary": "Company_0 - TRAINING_1 - Place_0 - Extra_13",
+    "description": "<p>Free text</p>"
+  },
+  {
+    "id": "Id_163",
+    "htmlLink": "HTMLLink_161",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2023-09-11T15:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2023-09-11T16:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "OTHER_11 - Other_12"
+  },
+  {
+    "id": "Id_165",
+    "htmlLink": "HTMLLink_163",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-09-18"
+    },
+    "end": {
+      "date": "2023-09-20"
+    },
+    "summary": "Company_0 - TRAINING_8 - Place_7"
+  },
+  {
+    "id": "Id_167",
+    "htmlLink": "HTMLLink_165",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-10-02"
+    },
+    "end": {
+      "date": "2023-10-05"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV - Extra_10"
+  },
+  {
+    "id": "Id_170",
+    "htmlLink": "HTMLLink_167",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-10-05"
+    },
+    "end": {
+      "date": "2023-10-07"
+    },
+    "summary": "Company_0 - TRAINING_1 - Place_0"
+  },
+  {
+    "id": "Id_171",
+    "htmlLink": "HTMLLink_168",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-10-10"
+    },
+    "end": {
+      "date": "2023-10-12"
+    },
+    "summary": "Company_0 - TRAINING_1 - CV - Extra_14"
+  },
+  {
+    "id": "Id_172",
+    "htmlLink": "HTMLLink_169",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-11-06"
+    },
+    "end": {
+      "date": "2023-11-09"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_173",
+    "htmlLink": "HTMLLink_170",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-12-04"
+    },
+    "end": {
+      "date": "2023-12-07"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_10"
+  },
+  {
+    "id": "Id_176",
+    "htmlLink": "HTMLLink_173",
+    "status": "confirmed",
+    "start": {
+      "date": "2023-12-11"
+    },
+    "end": {
+      "date": "2023-12-14"
+    },
+    "summary": "Company_1 - TRAINING_1 - CV - Extra_10"
+  },
+  {
+    "id": "Id_177",
+    "htmlLink": "HTMLLink_174",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2023-12-15T15:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2023-12-15T16:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Other_15 - Other_16"
+  },
+  {
+    "id": "Id_179",
+    "htmlLink": "HTMLLink_176",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-02-05"
+    },
+    "end": {
+      "date": "2024-02-08"
+    },
+    "summary": "Company_0 - TRAINING_9 - CV - Extra_10"
+  },
+  {
+    "id": "Id_182",
+    "htmlLink": "HTMLLink_179",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-02-15"
+    },
+    "end": {
+      "date": "2024-02-17"
+    },
+    "summary": "Company_1 - Other_18"
+  },
+  {
+    "id": "Id_183",
+    "htmlLink": "HTMLLink_180",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-02-22"
+    },
+    "end": {
+      "date": "2024-02-24"
+    },
+    "summary": "Company_1 - Training_7 - CV"
+  },
+  {
+    "id": "Id_186",
+    "htmlLink": "HTMLLink_183",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-03-18T15:30:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-03-18T16:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Other_20 - Other_21"
+  },
+  {
+    "id": "Id_188",
+    "htmlLink": "HTMLLink_185",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-03-22T10:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-03-22T11:00:00+01:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "OTHER_23 - Other_24"
+  },
+  {
+    "id": "Id_190",
+    "htmlLink": "HTMLLink_187",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-03-25"
+    },
+    "end": {
+      "date": "2024-03-29"
+    },
+    "summary": "Company_2 - TRAINING_1 - CV"
+  },
+  {
+    "id": "Id_195",
+    "htmlLink": "HTMLLink_191",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-04-10"
+    },
+    "end": {
+      "date": "2024-04-13"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV"
+  },
+  {
+    "id": "Id_196",
+    "htmlLink": "HTMLLink_192",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-04-17"
+    },
+    "end": {
+      "date": "2024-04-20"
+    },
+    "summary": "Company_0 - TRAINING_9 - Place_0"
+  },
+  {
+    "id": "Id_197",
+    "htmlLink": "HTMLLink_193",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-04-22"
+    },
+    "end": {
+      "date": "2024-04-25"
+    },
+    "summary": "Company_0 - TRAINING_4 - Place_8 - Extra_15"
+  },
+  {
+    "id": "Id_199",
+    "htmlLink": "HTMLLink_195",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-05-29"
+    },
+    "end": {
+      "date": "2024-06-01"
+    },
+    "summary": "Company_0 - TRAINING_10 - CV"
+  },
+  {
+    "id": "Id_201",
+    "htmlLink": "HTMLLink_197",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-06-04"
+    },
+    "end": {
+      "date": "2024-06-07"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_203",
+    "htmlLink": "HTMLLink_199",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-06-13"
+    },
+    "end": {
+      "date": "2024-06-15"
+    },
+    "summary": "Company_1 - Training_7 - PLACE_9"
+  },
+  {
+    "id": "Id_204",
+    "htmlLink": "HTMLLink_200",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-06-20T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-06-20T17:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV - Extra_16"
+  },
+  {
+    "id": "Id_205",
+    "htmlLink": "HTMLLink_201",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-06-21T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-06-21T17:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_6 - CV - Extra_16"
+  },
+  {
+    "id": "Id_206",
+    "htmlLink": "HTMLLink_202",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-06-24T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-06-24T17:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_6 - CV - Extra_16"
+  },
+  {
+    "id": "Id_207",
+    "htmlLink": "HTMLLink_203",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-06-25T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-06-25T17:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_6 - CV - Extra_16"
+  },
+  {
+    "id": "Id_208",
+    "htmlLink": "HTMLLink_204",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-06-26T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-06-26T17:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_6 - CV - Extra_16"
+  },
+  {
+    "id": "Id_209",
+    "htmlLink": "HTMLLink_205",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-06-27T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-06-27T17:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_6 - CV - Extra_16"
+  },
+  {
+    "id": "Id_210",
+    "htmlLink": "HTMLLink_206",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-07-04"
+    },
+    "end": {
+      "date": "2024-07-06"
+    },
+    "summary": "Company_0 - TRAINING_5 - CV"
+  },
+  {
+    "id": "Id_211",
+    "htmlLink": "HTMLLink_207",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-07-10"
+    },
+    "end": {
+      "date": "2024-07-13"
+    },
+    "summary": "Company_0 - TRAINING_9 - Place_0"
+  },
+  {
+    "id": "Id_216",
+    "htmlLink": "HTMLLink_212",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-09-16T09:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-09-16T12:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Company_1 - TRAINING_8 - CV - Extra_17"
+  },
+  {
+    "id": "Id_217",
+    "htmlLink": "HTMLLink_213",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-09-16T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-09-16T17:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Company_1 - TRAINING_8 - CV - Extra_18"
+  },
+  {
+    "id": "Id_218",
+    "htmlLink": "HTMLLink_214",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-09-17T09:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-09-17T12:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_8 - CV - Extra_17"
+  },
+  {
+    "id": "Id_219",
+    "htmlLink": "HTMLLink_215",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2024-09-17T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2024-09-17T17:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_8 - CV - Extra_18"
+  },
+  {
+    "id": "Id_220",
+    "htmlLink": "HTMLLink_216",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-09-30"
+    },
+    "end": {
+      "date": "2024-10-05"
+    },
+    "summary": "Company_0 - TRAINING_11 - Place_1"
+  },
+  {
+    "id": "Id_223",
+    "htmlLink": "HTMLLink_219",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-10-09"
+    },
+    "end": {
+      "date": "2024-10-12"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV"
+  },
+  {
+    "id": "Id_224",
+    "htmlLink": "HTMLLink_220",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-10-14"
+    },
+    "end": {
+      "date": "2024-10-15"
+    },
+    "summary": "Company_1 - TRAINING_5 - CV"
+  },
+  {
+    "id": "Id_225",
+    "htmlLink": "HTMLLink_221",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-10-16"
+    },
+    "end": {
+      "date": "2024-10-17"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV"
+  },
+  {
+    "id": "Id_228",
+    "htmlLink": "HTMLLink_224",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-11-04"
+    },
+    "end": {
+      "date": "2024-11-09"
+    },
+    "summary": "Company_0 - TRAINING_11 - CV"
+  },
+  {
+    "id": "Id_229",
+    "htmlLink": "HTMLLink_225",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-11-19"
+    },
+    "end": {
+      "date": "2024-11-23"
+    },
+    "summary": "Company_0 - TRAINING_12 - Place_1"
+  },
+  {
+    "id": "Id_230",
+    "htmlLink": "HTMLLink_226",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-11-25"
+    },
+    "end": {
+      "date": "2024-11-30"
+    },
+    "summary": "Company_0 - TRAINING_11 - Place_10"
+  },
+  {
+    "id": "Id_232",
+    "htmlLink": "HTMLLink_228",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-12-04"
+    },
+    "end": {
+      "date": "2024-12-07"
+    },
+    "summary": "Company_0 - TRAINING_9 - CV"
+  },
+  {
+    "id": "Id_234",
+    "htmlLink": "HTMLLink_230",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-12-10"
+    },
+    "end": {
+      "date": "2024-12-12"
+    },
+    "summary": "Company_0 - TRAINING_5 - CV"
+  },
+  {
+    "id": "Id_235",
+    "htmlLink": "HTMLLink_231",
+    "status": "confirmed",
+    "start": {
+      "date": "2024-12-17"
+    },
+    "end": {
+      "date": "2024-12-21"
+    },
+    "summary": "Company_0 - TRAINING_3 - CV"
+  },
+  {
+    "id": "Id_237",
+    "htmlLink": "HTMLLink_233",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-01-15"
+    },
+    "end": {
+      "date": "2025-01-18"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV - Extra_19"
+  },
+  {
+    "id": "Id_238",
+    "htmlLink": "HTMLLink_234",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-01-21"
+    },
+    "end": {
+      "date": "2025-01-24"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_10"
+  },
+  {
+    "id": "Id_241",
+    "htmlLink": "HTMLLink_237",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-02-03"
+    },
+    "end": {
+      "date": "2025-02-06"
+    },
+    "summary": "OTHER_36 - Other_37"
+  },
+  {
+    "id": "Id_244",
+    "htmlLink": "HTMLLink_240",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-02-10"
+    },
+    "end": {
+      "date": "2025-02-13"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV - Extra_20"
+  },
+  {
+    "id": "Id_247",
+    "htmlLink": "HTMLLink_243",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-03-12"
+    },
+    "end": {
+      "date": "2025-03-15"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_249",
+    "htmlLink": "HTMLLink_245",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-03-24"
+    },
+    "end": {
+      "date": "2025-03-26"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_251",
+    "htmlLink": "HTMLLink_247",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-03-27"
+    },
+    "end": {
+      "date": "2025-03-29"
+    },
+    "summary": "Company_1 - Training_7 - CV - Extra_21"
+  },
+  {
+    "id": "Id_258",
+    "htmlLink": "HTMLLink_254",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-05-15"
+    },
+    "end": {
+      "date": "2025-05-17"
+    },
+    "summary": "Company_0 - TRAINING_13 - Place_11 - Extra_22"
+  },
+  {
+    "id": "Id_259",
+    "htmlLink": "HTMLLink_255",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-05-19"
+    },
+    "end": {
+      "date": "2025-05-22"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV - Extra_23"
+  },
+  {
+    "id": "Id_260",
+    "htmlLink": "HTMLLink_256",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-06-02"
+    },
+    "end": {
+      "date": "2025-06-03"
+    },
+    "summary": "Company_1 - TRAINING_8 - CV - Extra_19"
+  },
+  {
+    "id": "Id_262",
+    "htmlLink": "HTMLLink_258",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-06-03"
+    },
+    "end": {
+      "date": "2025-06-04"
+    },
+    "summary": "Company_1 - TRAINING_8 - CV - Extra_20"
+  },
+  {
+    "id": "Id_263",
+    "htmlLink": "HTMLLink_259",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-06-04"
+    },
+    "end": {
+      "date": "2025-06-07"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV - Extra_24"
+  },
+  {
+    "id": "Id_265",
+    "htmlLink": "HTMLLink_261",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-10T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-10T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_266",
+    "htmlLink": "HTMLLink_262",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-11T11:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-11T11:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "COMPANY_4 - Training_0 - PLACE_12",
+    "description": "<p>Free text</p>"
+  },
+  {
+    "id": "Id_267",
+    "htmlLink": "HTMLLink_263",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-11T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-11T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_268",
+    "htmlLink": "HTMLLink_264",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-12T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-12T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_269",
+    "htmlLink": "HTMLLink_265",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-13T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-13T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_270",
+    "htmlLink": "HTMLLink_266",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-16T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-16T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_271",
+    "htmlLink": "HTMLLink_267",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-17T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-17T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_272",
+    "htmlLink": "HTMLLink_268",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-06-18"
+    },
+    "end": {
+      "date": "2025-06-21"
+    },
+    "summary": "Company_0 - TRAINING_11 - Place_13 - Extra_25"
+  },
+  {
+    "id": "Id_273",
+    "htmlLink": "HTMLLink_269",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-24T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-24T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_274",
+    "htmlLink": "HTMLLink_270",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-25T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-25T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_275",
+    "htmlLink": "HTMLLink_271",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-26T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-26T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_276",
+    "htmlLink": "HTMLLink_272",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-27T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-27T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_277",
+    "htmlLink": "HTMLLink_273",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-30T10:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-30T10:20:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "OTHER_45 - Other_46"
+  },
+  {
+    "id": "Id_279",
+    "htmlLink": "HTMLLink_275",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-06-30T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-06-30T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_280",
+    "htmlLink": "HTMLLink_276",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-07-02"
+    },
+    "end": {
+      "date": "2025-07-05"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_10"
+  },
+  {
+    "id": "Id_283",
+    "htmlLink": "HTMLLink_279",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-08-22T10:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-08-22T10:45:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "COMPANY_5 - Training_0 - Place_14",
+    "description": "<p>Free text</p>"
+  },
+  {
+    "id": "Id_284",
+    "htmlLink": "HTMLLink_280",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-09-02"
+    },
+    "end": {
+      "date": "2025-09-06"
+    },
+    "summary": "Company_0 - TRAINING_3 - CV"
+  },
+  {
+    "id": "Id_286",
+    "htmlLink": "HTMLLink_282",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-09-09"
+    },
+    "end": {
+      "date": "2025-09-10"
+    },
+    "summary": "Company_0 - Training_14 - CV - Extra_26"
+  },
+  {
+    "id": "Id_287",
+    "htmlLink": "HTMLLink_283",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-09-16"
+    },
+    "end": {
+      "date": "2025-09-20"
+    },
+    "summary": "Company_0 - TRAINING_12 - CV"
+  },
+  {
+    "id": "Id_288",
+    "htmlLink": "HTMLLink_284",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-09-23"
+    },
+    "end": {
+      "date": "2025-09-27"
+    },
+    "summary": "Company_0 - TRAINING_3 - Place_0"
+  },
+  {
+    "id": "Id_289",
+    "htmlLink": "HTMLLink_285",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-09-29"
+    },
+    "end": {
+      "date": "2025-10-02"
+    },
+    "summary": "Company_0 - TRAINING_11 - Place_7 - Extra_22"
+  },
+  {
+    "id": "Id_290",
+    "htmlLink": "HTMLLink_286",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-10-02"
+    },
+    "end": {
+      "date": "2025-10-04"
+    },
+    "summary": "Company_1 - Training_7 - CV - Extra_21"
+  },
+  {
+    "id": "Id_292",
+    "htmlLink": "HTMLLink_288",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-10-06T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-10-06T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_293",
+    "htmlLink": "HTMLLink_289",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-10-07T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-10-07T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_294",
+    "htmlLink": "HTMLLink_290",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-10-08T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-10-08T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_295",
+    "htmlLink": "HTMLLink_291",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-10-09T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-10-09T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_296",
+    "htmlLink": "HTMLLink_292",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-10-10T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-10-10T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_297",
+    "htmlLink": "HTMLLink_293",
+    "status": "confirmed",
+    "start": {
+      "dateTime": "2025-10-13T14:00:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "end": {
+      "dateTime": "2025-10-13T17:30:00+02:00",
+      "timeZone": "Europe/Paris"
+    },
+    "summary": "-> Company_1 - TRAINING_5 - CV - Extra_20"
+  },
+  {
+    "id": "Id_298",
+    "htmlLink": "HTMLLink_294",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-10-14"
+    },
+    "end": {
+      "date": "2025-10-16"
+    },
+    "summary": "-> Company_0 - TRAINING_11 - Place_7 - Extra_22"
+  },
+  {
+    "id": "Id_299",
+    "htmlLink": "HTMLLink_295",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-10-16"
+    },
+    "end": {
+      "date": "2025-10-17"
+    },
+    "summary": "Company_0 - TRAINING_12 - Place_7 - Extra_27"
+  },
+  {
+    "id": "Id_300",
+    "htmlLink": "HTMLLink_296",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-10-20"
+    },
+    "end": {
+      "date": "2025-10-23"
+    },
+    "summary": "Company_0 - TRAINING_9 - CV"
+  },
+  {
+    "id": "Id_301",
+    "htmlLink": "HTMLLink_297",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-10-23"
+    },
+    "end": {
+      "date": "2025-10-25"
+    },
+    "summary": "-> Company_0 - TRAINING_12 - Place_7 - Extra_27"
+  },
+  {
+    "id": "Id_302",
+    "htmlLink": "HTMLLink_298",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-11-03"
+    },
+    "end": {
+      "date": "2025-11-06"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_10"
+  },
+  {
+    "id": "Id_303",
+    "htmlLink": "HTMLLink_299",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-11-06"
+    },
+    "end": {
+      "date": "2025-11-08"
+    },
+    "summary": "Company_1 - TRAINING_8 - CV"
+  },
+  {
+    "id": "Id_304",
+    "htmlLink": "HTMLLink_300",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-11-10"
+    },
+    "end": {
+      "date": "2025-11-11"
+    },
+    "summary": "Company_1 - TRAINING_9 - CV"
+  },
+  {
+    "id": "Id_305",
+    "htmlLink": "HTMLLink_301",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-11-13"
+    },
+    "end": {
+      "date": "2025-11-15"
+    },
+    "summary": "Company_1 - TRAINING_10 - Place_15 - Extra_28"
+  },
+  {
+    "id": "Id_306",
+    "htmlLink": "HTMLLink_302",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-11-17"
+    },
+    "end": {
+      "date": "2025-11-19"
+    },
+    "summary": "-> Company_1 - TRAINING_10 - Place_15 - Extra_28"
+  },
+  {
+    "id": "Id_307",
+    "htmlLink": "HTMLLink_303",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-11-19"
+    },
+    "end": {
+      "date": "2025-11-22"
+    },
+    "summary": "Company_1 - TRAINING_6 - CV"
+  },
+  {
+    "id": "Id_308",
+    "htmlLink": "HTMLLink_304",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-11-24"
+    },
+    "end": {
+      "date": "2025-11-25"
+    },
+    "summary": "-> Company_0 - TRAINING_12 - Place_7 - Extra_27"
+  },
+  {
+    "id": "Id_309",
+    "htmlLink": "HTMLLink_305",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-11-25"
+    },
+    "end": {
+      "date": "2025-11-29"
+    },
+    "summary": "Company_0 - TRAINING_11 - CV - Extra_20"
+  },
+  {
+    "id": "Id_311",
+    "htmlLink": "HTMLLink_307",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-12-02"
+    },
+    "end": {
+      "date": "2025-12-06"
+    },
+    "summary": "Company_0 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_313",
+    "htmlLink": "HTMLLink_309",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-12-08"
+    },
+    "end": {
+      "date": "2025-12-09"
+    },
+    "summary": "Company_1 - TRAINING_9 - CV"
+  },
+  {
+    "id": "Id_314",
+    "htmlLink": "HTMLLink_310",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-12-09"
+    },
+    "end": {
+      "date": "2025-12-12"
+    },
+    "summary": "Company_0 - TRAINING_4 - CV"
+  },
+  {
+    "id": "Id_315",
+    "htmlLink": "HTMLLink_311",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-12-12"
+    },
+    "end": {
+      "date": "2025-12-13"
+    },
+    "summary": "-> Company_1 - TRAINING_9 - CV"
+  },
+  {
+    "id": "Id_316",
+    "htmlLink": "HTMLLink_312",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-12-15"
+    },
+    "end": {
+      "date": "2025-12-18"
+    },
+    "summary": "Company_0 - TRAINING_10 - CV"
+  },
+  {
+    "id": "Id_317",
+    "htmlLink": "HTMLLink_313",
+    "status": "confirmed",
+    "start": {
+      "date": "2025-12-18"
+    },
+    "end": {
+      "date": "2025-12-20"
+    },
+    "summary": "Company_0 - TRAINING_1 - Place_7 - Extra_22"
+  },
+  {
+    "id": "Id_319",
+    "htmlLink": "HTMLLink_315",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-01-20"
+    },
+    "end": {
+      "date": "2026-01-22"
+    },
+    "summary": "Company_0 - TRAINING_12 - Place_11 - Extra_22"
+  },
+  {
+    "id": "Id_321",
+    "htmlLink": "HTMLLink_317",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-02-02"
+    },
+    "end": {
+      "date": "2026-02-05"
+    },
+    "summary": "Company_1 - TRAINING_11 - CV - Extra_10"
+  },
+  {
+    "id": "Id_324",
+    "htmlLink": "HTMLLink_320",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-02-09"
+    },
+    "end": {
+      "date": "2026-02-12"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_24"
+  },
+  {
+    "id": "Id_325",
+    "htmlLink": "HTMLLink_321",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-02-16"
+    },
+    "end": {
+      "date": "2026-02-18"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_22"
+  },
+  {
+    "id": "Id_326",
+    "htmlLink": "HTMLLink_322",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-02-18"
+    },
+    "end": {
+      "date": "2026-02-21"
+    },
+    "summary": "Company_1 - TRAINING_5 - CV - Extra_22"
+  },
+  {
+    "id": "Id_328",
+    "htmlLink": "HTMLLink_324",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-03-02"
+    },
+    "end": {
+      "date": "2026-03-07"
+    },
+    "summary": "Company_1 - TRAINING_12 - CV - Extra_22"
+  },
+  {
+    "id": "Id_330",
+    "htmlLink": "HTMLLink_326",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-03-09"
+    },
+    "end": {
+      "date": "2026-03-12"
+    },
+    "summary": "Company_1 - TRAINING_11 - CV - Extra_10"
+  },
+  {
+    "id": "Id_331",
+    "htmlLink": "HTMLLink_327",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-03-16"
+    },
+    "end": {
+      "date": "2026-03-17"
+    },
+    "summary": "Company_1 - TRAINING_12 - CV - Extra_29"
+  },
+  {
+    "id": "Id_332",
+    "htmlLink": "HTMLLink_328",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-03-30"
+    },
+    "end": {
+      "date": "2026-04-01"
+    },
+    "summary": "Company_0 - TRAINING_4 - Place_16 - Extra_22"
+  },
+  {
+    "id": "Id_335",
+    "htmlLink": "HTMLLink_331",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-04-14"
+    },
+    "end": {
+      "date": "2026-04-18"
+    },
+    "summary": "-> Company_1 - TRAINING_12 - CV - Extra_29"
+  },
+  {
+    "id": "Id_336",
+    "htmlLink": "HTMLLink_332",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-04-21"
+    },
+    "end": {
+      "date": "2026-04-25"
+    },
+    "summary": "Company_0 - TRAINING_0 - CV"
+  },
+  {
+    "id": "Id_337",
+    "htmlLink": "HTMLLink_333",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-04-27"
+    },
+    "end": {
+      "date": "2026-04-30"
+    },
+    "summary": "Company_1 - TRAINING_0 - CV - Extra_24"
+  },
+  {
+    "id": "Id_338",
+    "htmlLink": "HTMLLink_334",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-05-11"
+    },
+    "end": {
+      "date": "2026-05-14"
+    },
+    "summary": "Company_1 - TRAINING_11 - CV - Extra_10"
+  },
+  {
+    "id": "Id_340",
+    "htmlLink": "HTMLLink_336",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-06-01"
+    },
+    "end": {
+      "date": "2026-06-04"
+    },
+    "summary": "Company_1 - TRAINING_11 - CV - Extra_10"
+  },
+  {
+    "id": "Id_343",
+    "htmlLink": "HTMLLink_339",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-06-17"
+    },
+    "end": {
+      "date": "2026-06-20"
+    },
+    "summary": "Company_0 - TRAINING_10 - Place_17"
+  },
+  {
+    "id": "Id_344",
+    "htmlLink": "HTMLLink_340",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-06-22"
+    },
+    "end": {
+      "date": "2026-06-27"
+    },
+    "summary": "Company_0 - TRAINING_11 - CV - Extra_30"
+  },
+  {
+    "id": "Id_348",
+    "htmlLink": "HTMLLink_344",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-09-07"
+    },
+    "end": {
+      "date": "2026-09-12"
+    },
+    "summary": "Company_0 - TRAINING_11 - Place_7 - Extra_30"
+  },
+  {
+    "id": "Id_349",
+    "htmlLink": "HTMLLink_345",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-09-14"
+    },
+    "end": {
+      "date": "2026-09-17"
+    },
+    "summary": "Company_0 - TRAINING_9 - CV"
+  },
+  {
+    "id": "Id_350",
+    "htmlLink": "HTMLLink_346",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-09-24"
+    },
+    "end": {
+      "date": "2026-09-26"
+    },
+    "summary": "Company_6 - TRAINING_0 - CV - Extra_31"
+  },
+  {
+    "id": "Id_351",
+    "htmlLink": "HTMLLink_347",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-09-29"
+    },
+    "end": {
+      "date": "2026-10-03"
+    },
+    "summary": "Company_6 - TRAINING_1 - CV"
+  },
+  {
+    "id": "Id_352",
+    "htmlLink": "HTMLLink_348",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-10-05"
+    },
+    "end": {
+      "date": "2026-10-08"
+    },
+    "summary": "Company_1 - TRAINING_11 - CV - Extra_10"
+  },
+  {
+    "id": "Id_354",
+    "htmlLink": "HTMLLink_350",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-10-08"
+    },
+    "end": {
+      "date": "2026-10-10"
+    },
+    "summary": "Company_0 - TRAINING_1 - CV - Extra_20"
+  },
+  {
+    "id": "Id_355",
+    "htmlLink": "HTMLLink_351",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-10-12"
+    },
+    "end": {
+      "date": "2026-10-15"
+    },
+    "summary": "Company_0 - TRAINING_6 - CV"
+  },
+  {
+    "id": "Id_357",
+    "htmlLink": "HTMLLink_353",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-11-02"
+    },
+    "end": {
+      "date": "2026-11-07"
+    },
+    "summary": "Company_0 - TRAINING_11 - Place_17 - Extra_32"
+  },
+  {
+    "id": "Id_359",
+    "htmlLink": "HTMLLink_355",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-11-23"
+    },
+    "end": {
+      "date": "2026-11-27"
+    },
+    "summary": "Company_6 - TRAINING_0 - CV - Extra_33"
+  },
+  {
+    "id": "Id_363",
+    "htmlLink": "HTMLLink_359",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-12-09"
+    },
+    "end": {
+      "date": "2026-12-12"
+    },
+    "summary": "Company_7 - TRAINING_0 - CV - Extra_10"
+  },
+  {
+    "id": "Id_364",
+    "htmlLink": "HTMLLink_360",
+    "status": "confirmed",
+    "start": {
+      "date": "2026-12-16"
+    },
+    "end": {
+      "date": "2026-12-19"
+    },
+    "summary": "Company_7 - TRAINING_1 - CV - Extra_10"
+  },
+  {
+    "id": "Id_365",
+    "htmlLink": "HTMLLink_361",
+    "status": "confirmed",
+    "start": {
+      "date": "2027-02-01"
+    },
+    "end": {
+      "date": "2027-02-04"
+    },
+    "summary": "Company_7 - TRAINING_2 - CV - Extra_10"
+  },
+  {
+    "id": "Id_369",
+    "htmlLink": "HTMLLink_365",
+    "status": "confirmed",
+    "start": {
+      "date": "2027-03-08"
+    },
+    "end": {
+      "date": "2027-03-11"
+    },
+    "summary": "Company_7 - TRAINING_2 - CV - Extra_10"
+  },
+  {
+    "id": "Id_370",
+    "htmlLink": "HTMLLink_366",
+    "status": "confirmed",
+    "start": {
+      "date": "2027-03-31"
+    },
+    "end": {
+      "date": "2027-04-03"
+    },
+    "summary": "Company_7 - TRAINING_2 - CV - Extra_10"
+  },
+  {
+    "id": "Id_373",
+    "htmlLink": "HTMLLink_369",
+    "status": "confirmed",
+    "start": {
+      "date": "2027-05-10"
+    },
+    "end": {
+      "date": "2027-05-13"
+    },
+    "summary": "Company_7 - TRAINING_2 - CV - Extra_10"
+  },
+  {
+    "id": "Id_374",
+    "htmlLink": "HTMLLink_370",
+    "status": "confirmed",
+    "start": {
+      "date": "2027-06-02"
+    },
+    "end": {
+      "date": "2027-06-05"
+    },
+    "summary": "Company_7 - TRAINING_2 - CV - Extra_10"
+  },
+  {
+    "id": "Id_377",
+    "htmlLink": "HTMLLink_373",
+    "status": "confirmed",
+    "start": {
+      "date": "2027-07-28"
+    },
+    "end": {
+      "date": "2027-07-31"
+    },
+    "summary": "Company_7 - TRAINING_0 - CV - Extra_10"
+  },
+  {
+    "id": "Id_380",
+    "htmlLink": "HTMLLink_376",
+    "status": "confirmed",
+    "start": {
+      "date": "2027-10-04"
+    },
+    "end": {
+      "date": "2027-10-07"
+    },
+    "summary": "Company_7 - TRAINING_2 - CV - Extra_10"
+  },
+  {
+    "id": "Id_384",
+    "htmlLink": "HTMLLink_380",
+    "status": "confirmed",
+    "start": {
+      "date": "2027-12-15"
+    },
+    "end": {
+      "date": "2027-12-18"
+    },
+    "summary": "Company_7 - TRAINING_2 - CV - Extra_10"
+  }
+]

@@ -210,6 +210,9 @@ def select_fixture_events(
 ) -> list[Mapping[str, Any]]:
     """Keep the events worth committing: matching titles and two-segment ones.
 
+    Recurring instances of two-segment titles are left out: their dates are
+    personal (a yearly series gives away a birth date).
+
     Returns:
         The selected events, in the same order.
     """
@@ -218,7 +221,10 @@ def select_fixture_events(
         event
         for event in anonymized_events
         if pattern.fullmatch(summary := event.get("summary", ""))
-        or len(summary.split(" - ")) == _FIXTURE_OTHER_SEGMENTS
+        or (
+            len(summary.split(" - ")) == _FIXTURE_OTHER_SEGMENTS
+            and "recurringEventId" not in event
+        )
     ]
 
 

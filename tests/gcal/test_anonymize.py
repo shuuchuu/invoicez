@@ -259,3 +259,14 @@ def test_select_fixture_events() -> None:
         "Id_5",
         "Id_6",
     ]
+
+
+def test_select_fixture_events_leaves_out_recurring_two_segment_events() -> None:
+    birthday = {
+        "summary": "Birthday - Alice",
+        "recurringEventId": "series",
+        **_all_day("1952-02-05", "1952-02-06"),
+    }
+    one_off = {"summary": "Call - Bob", **_all_day("2026-10-05", "2026-10-06")}
+
+    assert select_fixture_events([birthday, one_off], _TITLE_PATTERN) == [one_off]

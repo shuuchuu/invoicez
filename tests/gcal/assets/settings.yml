@@ -1,0 +1,92 @@
+# Anonymised from the author's calendar settings by scripts/dump_gcal_fixture.py.
+# start_date is moved back so that every fixture engagement is considered, and
+# trainings missing from the real settings get the default rate.
+gcal:
+  start_date: 2020-01-01
+  title_pattern: |
+    \s*
+    (?P<continuation>
+      -> \s+
+    )?
+    (?P<company>
+      .*?
+    )
+    \s+ - \s+
+    (?P<training>
+      .*?
+    )
+    \s+ - \s+
+    (?P<place>
+      .*?
+    )
+    (?:
+      \s+ - \s+
+      (?P<extra>.*?)
+    )?
+    \s*
+  templates:
+    description: "Facture pour {{ days }} jours de formation « {{ training.name }} »."
+    day_line: "Journée de formation"
+    half_day_line: "Journée de formation"
+    preparation_line: "Journée de préparation"
+  rates:
+    default:
+      day: 690
+      preparation_day: 500
+    t1:
+      day: 590
+      preparation_day: 500
+    t2:
+      day: 690
+      preparation_day: 500
+    t3:
+      day: 790
+      preparation_day: 500
+  trainings:
+    company_0:
+      training_0: {name: Training 0 of Company_0, rate: default}
+      training_1: {name: Training 1 of Company_0, rate: t2}
+      training_2: {name: Training 2 of Company_0, rate: default}
+      training_3: {name: Training 3 of Company_0, rate: default}
+      training_4: {name: Training 4 of Company_0, rate: t2}
+      training_5: {name: Training 5 of Company_0, rate: t2}
+      training_6: {name: Training 6 of Company_0, rate: default}
+      training_7: {name: Training 7 of Company_0, rate: default}
+      training_8: {name: Training 8 of Company_0, rate: default}
+      training_9: {name: Training 9 of Company_0, rate: default}
+      training_10: {name: Training 10 of Company_0, rate: default}
+      training_11: {name: Training 11 of Company_0, rate: default}
+      training_12: {name: Training 12 of Company_0, rate: default}
+      training_13: {name: Training 13 of Company_0, rate: default}
+      training_14: {name: Training 14 of Company_0, rate: default}
+    company_1:
+      training_0: {name: Training 0 of Company_1, rate: default}
+      training_1: {name: Training 1 of Company_1, rate: default}
+      training_2: {name: Training 2 of Company_1, rate: default}
+      training_3: {name: Training 3 of Company_1, rate: default}
+      training_4: {name: Training 4 of Company_1, rate: default}
+      training_5: {name: Training 5 of Company_1, rate: default}
+      training_6: {name: Training 6 of Company_1, rate: default}
+      training_7: {name: Training 7 of Company_1, rate: default}
+      training_8: {name: Training 8 of Company_1, rate: default}
+      training_9: {name: Training 9 of Company_1, rate: default}
+      training_10: {name: Training 10 of Company_1, rate: default}
+      training_11: {name: Training 11 of Company_1, rate: default}
+      training_12: {name: Training 12 of Company_1, rate: default}
+    company_2:
+      training_0: {name: Training 0 of Company_2, rate: default}
+      training_1: {name: Training 1 of Company_2, rate: default}
+    company_3:
+      training_0: {name: Training 0 of Company_3, rate: default}
+      training_1: {name: Training 1 of Company_3, rate: default}
+    company_4:
+      training_0: {name: Training 0 of Company_4, rate: default}
+    company_5:
+      training_0: {name: Training 0 of Company_5, rate: default}
+    company_6:
+      training_0: {name: Training 0 of Company_6, rate: default}
+      training_1: {name: Training 1 of Company_6, rate: default}
+    company_7:
+      training_0: {name: Training 0 of Company_7, rate: default}
+      training_1: {name: Training 1 of Company_7, rate: default}
+      training_2: {name: Training 2 of Company_7, rate: default}
