@@ -194,6 +194,7 @@ def test_descriptions(gcal_settings: GcalSettings) -> None:
         SessionDescription(ref="X", preparation_days=1.5),
         [],
     )
+    assert parse("ref: X\ntrainees: 8") == (SessionDescription(ref="X", trainees=8), [])
     assert parse("<p>Call the client first</p>") == (
         SessionDescription(),
         [("info", "description is HTML, ignored")],

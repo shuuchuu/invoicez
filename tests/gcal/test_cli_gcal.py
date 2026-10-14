@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -192,7 +193,7 @@ def _documents(data_dir: Path) -> list[str]:
 
 
 def test_bill(data_dir: Path, answers: list[str], capsys: Any) -> None:
-    answers.extend(["REFAA1", "y"])
+    answers.extend(["REFAA1", "", "y"])
 
     assert _run("bill", "--events", EVENTS) == 0
 
@@ -218,11 +219,55 @@ def test_bill(data_dir: Path, answers: list[str], capsys: Any) -> None:
     assert "│ unbilled " not in capsys.readouterr().out
 
 
+def test_bill_asks_for_trainees(
+    data_dir: Path, answers: list[str], capsys: Any
+) -> None:
+    answers.extend(["REFAA1", "eight", "8", "y"])
+
+    assert _run("bill", "--events", EVENTS) == 0
+
+    [path] = _documents(data_dir)
+    document = safe_load((data_dir / path).read_text(encoding="utf8"))
+    assert document["trainees"] == 8
+    output = capsys.readouterr().out
+    assert "'eight' is not a number of trainees" in output
+    assert "Trainees: 8" in output
+
+
+def test_bill_takes_trainees_from_the_description(
+    data_dir: Path, answers: list[str], tmp_path: Path
+) -> None:
+    raw_events = json.loads(Path(EVENTS).read_text(encoding="utf8"))
+    for raw in raw_events:
+        if raw["id"] == _UNBILLED_ID:
+            raw["description"] = "trainees: 5"
+    events = tmp_path / "events.json"
+    events.write_text(json.dumps(raw_events), encoding="utf8")
+    # Not asked for the trainees.
+    answers.extend(["REFAA1", "y"])
+
+    assert _run("bill", "--events", str(events)) == 0
+
+    [path] = _documents(data_dir)
+    assert safe_load((data_dir / path).read_text(encoding="utf8"))["trainees"] == 5
+
+
+def test_bill_quits_when_asked_for_trainees(
+    data_dir: Path, answers: list[str], capsys: Any
+) -> None:
+    answers.extend(["REFAA1", "q"])
+
+    assert _run("bill", "--events", EVENTS) == 0
+
+    assert _documents(data_dir) == []
+    assert "0 written, 0 skipped, 0 failed." in capsys.readouterr().out
+
+
 def test_bill_numbers_at_confirmation(
     data_dir: Path, answers: list[str], monkeypatch: Any, capsys: Any
 ) -> None:
     monkeypatch.setattr(gcal_cli, "_today", lambda: date(2026, 11, 10))
-    answers.extend(["REFAA1", "n", "REFBB2", "y"])
+    answers.extend(["REFAA1", "", "n", "REFBB2", "", "y"])
 
     assert _run("bill", "--events", EVENTS) == 0
 
@@ -237,7 +282,7 @@ def test_bill_quit_and_empty_reference(
     data_dir: Path, answers: list[str], monkeypatch: Any, capsys: Any
 ) -> None:
     monkeypatch.setattr(gcal_cli, "_today", lambda: date(2026, 11, 10))
-    answers.extend(["", "REFBB2", "q"])
+    answers.extend(["", "REFBB2", "", "q"])
 
     assert _run("bill", "--events", EVENTS) == 0
 
@@ -247,7 +292,7 @@ def test_bill_quit_and_empty_reference(
 
 def test_bill_by_id(data_dir: Path, answers: list[str], monkeypatch: Any) -> None:
     monkeypatch.setattr(gcal_cli, "_today", lambda: date(2026, 11, 10))
-    answers.extend(["REFBB2", "y"])
+    answers.extend(["REFBB2", "", "y"])
 
     assert _run("bill", _NEXT_ID, "--events", EVENTS) == 0
 
@@ -278,7 +323,7 @@ def test_bill_refuses_changed_engagements(data_dir: Path, answers: list[str]) ->
 def test_bill_rebill(
     data_dir: Path, gcal_settings: GcalSettings, answers: list[str]
 ) -> None:
-    answers.extend(["REFAA1", "y"])
+    answers.extend(["REFAA1", "", "y"])
     _run("bill", "--events", EVENTS)
     [first] = _documents(data_dir)
     credit_note = data_dir / "gcal-ymls" / "2026" / "Avoir.yml"
@@ -289,7 +334,7 @@ def test_bill_rebill(
 
     with raises(InvoicezError, match="add --rebill"):
         main("gcal", "bill", _UNBILLED_ID, "--events", EVENTS)
-    answers.extend(["REFAA1", "y"])
+    answers.extend(["REFAA1", "", "y"])
     assert _run("bill", _UNBILLED_ID, "--rebill", "--events", EVENTS) == 0
 
     assert _documents(data_dir) == [
@@ -322,7 +367,7 @@ def test_bill_refuses_to_overwrite(
     target = data_dir / "gcal-ymls/2026/Facture-2026-10-001-Company_0-REFAA1.yml"
     target.parent.mkdir(parents=True)
     target.write_text("# not a document\n", encoding="utf8")
-    answers.append("REFAA1")
+    answers.extend(["REFAA1", ""])
 
     assert _run("bill", "--events", EVENTS) == 1
 
@@ -333,7 +378,7 @@ def test_bill_refuses_to_overwrite(
 def test_bill_build(data_dir: Path, answers: list[str], monkeypatch: Any) -> None:
     built: list[Path] = []
     monkeypatch.setattr(gcal_cli, "runner_run", lambda path, *args: built.append(path))
-    answers.extend(["REFAA1", "y"])
+    answers.extend(["REFAA1", "", "y"])
 
     assert _run("bill", "--build", "--events", EVENTS) == 0
 
@@ -351,7 +396,7 @@ def test_bill_send(
 
     monkeypatch.setattr(gcal_cli, "send_document", send_document)
     monkeypatch.setattr(gcal_cli, "runner_run", lambda *args: fail("built twice"))
-    answers.extend(["REFAA1", "y"])
+    answers.extend(["REFAA1", "", "y"])
 
     assert _run("bill", "--send", "--build", "--events", EVENTS) == 0
 
@@ -367,7 +412,7 @@ def test_bill_send_failure(
         raise InvoicezError(msg)
 
     monkeypatch.setattr(gcal_cli, "send_document", send_document)
-    answers.extend(["REFAA1", "y"])
+    answers.extend(["REFAA1", "", "y"])
 
     assert _run("bill", "--send", "--events", EVENTS) == 1
 
@@ -390,7 +435,7 @@ def test_bill_without_calendar_id(data_dir: Path) -> None:
 def test_bill_reports_unescaped_latex(
     data_dir: Path, answers: list[str], capsys: Any
 ) -> None:
-    answers.extend(["CF1 & CF2"])
+    answers.extend(["CF1 & CF2", ""])
 
     assert _run("bill", "--events", EVENTS) == 1
 

@@ -279,9 +279,29 @@ def _preview(
     console.print(table)
     console.print(
         f"Total: {total:.2f}\nDescription: {document['description']}\n"
-        f"Reference: {document.get('reference', '')}\nFile: {path}",
+        f"Reference: {document.get('reference', '')}\n"
+        f"Trainees: {document.get('trainees', 'unknown')}\nFile: {path}",
         highlight=False,
     )
+
+
+def _ask_trainees(
+    console: Console, status: EngagementStatus
+) -> int | Literal["quit"] | None:
+    # The number of trainees, None if unknown, or "quit".
+    e = status.engagement
+    while True:
+        answer = _ask(
+            f"Trainees for {e.root.title!r} ({e.start} → {e.end}), "
+            "empty if unknown, [q]uit: "
+        ).strip()
+        if not answer:
+            return None
+        if answer.casefold().startswith("q"):
+            return "quit"
+        if answer.isdigit():
+            return int(answer)
+        console.print(f"[bold red]error[/]: {answer!r} is not a number of trainees")
 
 
 def _bill_one(
@@ -305,6 +325,12 @@ def _bill_one(
     )
     if not reference:
         return "skipped", None
+    trainees = e.description.trainees
+    if trainees is None:
+        answer = _ask_trainees(console, status)
+        if answer == "quit":
+            return "quit", None
+        trainees = answer
     try:
         document = draft(
             e,
@@ -312,6 +338,7 @@ def _bill_one(
             document_number=get_next_document_number(paths.git_dir, today=today),
             today=today,
             reference=reference,
+            trainees=trainees,
             settings=context.gcal,
             global_mapping=context.global_mapping,
             calendar_id=calendar_id,

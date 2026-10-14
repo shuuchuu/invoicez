@@ -19,7 +19,9 @@ HTML_TEXT = "<p>Free text</p>"
 
 # Description keys whose values are our own data (invoice numbers, dates,
 # counts), not the client's.
-_KEPT_DESCRIPTION_KEYS = frozenset(("invoice", "paid", "sent", "preparation_days"))
+_KEPT_DESCRIPTION_KEYS = frozenset(
+    ("invoice", "paid", "sent", "preparation_days", "trainees")
+)
 _EVENT_TIME_KEYS = ("date", "dateTime", "timeZone")
 # Places that say how a session is given rather than where: kept, as billing
 # may depend on them. Others could point to a client and are pseudonymised.

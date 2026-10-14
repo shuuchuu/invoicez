@@ -10,6 +10,7 @@ from pydantic import (
     BeforeValidator,
     Field,
     NonNegativeFloat,
+    NonNegativeInt,
     ValidationError,
 )
 from yaml import YAMLError, safe_load
@@ -36,6 +37,8 @@ class SessionDescription(BaseModel, extra="ignore", frozen=True):
 
     ref: _Str = None
     preparation_days: NonNegativeFloat = 0
+    # Number of people trained, copied to the invoice for the activity report.
+    trainees: NonNegativeInt | None = None
     # Invoice number written by hand before invoicez tracked documents.
     legacy_invoice: _Str = Field(default=None, alias="invoice")
 

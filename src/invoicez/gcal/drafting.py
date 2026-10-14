@@ -59,6 +59,7 @@ def draft(
     document_number: str,
     today: date,
     reference: str | None,
+    trainees: int | None,
     settings: GcalSettings,
     global_mapping: Mapping[str, Any],
     calendar_id: str,
@@ -72,6 +73,8 @@ def draft(
         today: The invoice date.
         reference: The client's reference (BT-12 or BT-13), usually the
             engagement description's ref.
+        trainees: The number of people trained, if known, usually the
+            engagement description's trainees.
         settings: The gcal settings, for the description template.
         global_mapping: The content of variables.yml.
         calendar_id: The calendar the engagement comes from.
@@ -106,6 +109,8 @@ def draft(
     }
     if reference is not None:
         document["reference"] = reference
+    if trainees is not None:
+        document["trainees"] = trainees
     _check_latex(document)
     if pricing.company not in global_mapping.get("companies", {}):
         msg = f"company {pricing.company!r} missing from variables.yml"

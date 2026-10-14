@@ -88,6 +88,7 @@ def _draft(
     settings: GcalSettings,
     global_mapping: dict[str, Any],
     reference: str | None = "BDAZZ1",
+    trainees: int | None = None,
 ) -> dict[str, Any]:
     return draft(
         engagement,
@@ -95,6 +96,7 @@ def _draft(
         document_number="2026-10-004",
         today=_TODAY,
         reference=reference,
+        trainees=trainees,
         settings=settings,
         global_mapping=global_mapping,
         calendar_id="calendar@group.calendar.google.com",
@@ -152,6 +154,13 @@ def test_draft_survives_a_yaml_round_trip(
     assert variables.reference == "BDAZZ1"
     assert variables.source is not None
     assert variables.source.event_ids == ["root", "next"]
+
+
+def test_draft_trainees(settings: GcalSettings, global_mapping: dict[str, Any]) -> None:
+    document = _draft(_engagement(), settings, global_mapping, trainees=8)
+
+    assert document["trainees"] == 8
+    assert "trainees" not in _draft(_engagement(), settings, global_mapping)
 
 
 def test_draft_without_reference(
@@ -224,6 +233,7 @@ def test_fixture(
             today=_TODAY,
             # Pseudonyms (REF_0) hold a "_", which LaTeX would need escaped.
             reference=(engagement.description.ref or "").replace("_", "-") or None,
+            trainees=engagement.description.trainees,
             settings=gcal_settings,
             global_mapping=global_mapping,
             calendar_id="calendar-id",

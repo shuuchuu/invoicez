@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import Any, Literal, Self
 
 from deepmerge import always_merger
-from pydantic import BaseModel, computed_field, model_validator
+from pydantic import BaseModel, NonNegativeInt, computed_field, model_validator
 
 
 class TVA(BaseModel, extra="forbid", frozen=True):
@@ -116,6 +116,8 @@ class Variables(BaseModel, extra="forbid", frozen=True):
     payment_due_date: date | None = None
     # What produced this document, for reconciliation. Not printed.
     source: GcalSource | None = None
+    # Number of people trained, for the training activity report. Not printed.
+    trainees: NonNegativeInt | None = None
     tva: TVA
     user: Seller
     company: Company
