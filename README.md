@@ -119,7 +119,7 @@ the French way in templates (`2,5`). Documents hold LaTeX, so `&`, `%`, `$`,
   with 1 on an error.
 - `invoicez gcal bill [ID...] [--rebill] [--build]`: drafts the unbilled
   engagements one at a time, after a preview and a confirmation; numbers are
-  taken at confirmation. `--build` also builds the PDF and XML.
+  taken at confirmation. `--build` also builds the PDF and XML in `sendbox/`.
 - `invoicez gcal link [--write] [--pair ID=NUMBER...]`: links invoices made
   before by hand to their engagements, by the days they bill, so that
   `start_date` can go back to the first one. Dry run without `--write`.
@@ -127,6 +127,25 @@ the French way in templates (`2,5`). Documents hold LaTeX, so `&`, `%`, `$`,
 Every command takes `--events FILE` to read events from a JSON file instead of
 Google Calendar. `scripts/dump_gcal_fixture.py` writes such a file, anonymised,
 which is how `tests/gcal/assets/events.json` was made.
+
+## Building and sending invoices
+
+Commands taking a document accept either the path of its YAML file or its
+number, e.g. `invoicez send 2026-10-003` or `invoicez cancel 2026-10-003`. Generated files always go to the root
+of the repository, wherever the command is run from:
+
+- `build/`: intermediate LaTeX and XML files, deleted by `invoicez clean`.
+- `sendbox/`: the PDFs built by `invoicez run` and `invoicez gcal bill --build`.
+- `archive/<company>/<year>/`: the PDFs of the invoices sent, as sent.
+
+`invoicez send DOCUMENT` builds the invoice in `sendbox/`, validates it with
+SuperPDP, and stops there unless given `--no-dry-run`. Once sent, its PDF moves
+to `archive/`, under the company of the document and the year of its date. It
+refuses an invoice whose number SuperPDP already has, so it is safe to run
+again.
+
+`build/` and `sendbox/` are generated and can be ignored by git; `archive/` is
+the record of what was sent.
 
 ## Usage
 

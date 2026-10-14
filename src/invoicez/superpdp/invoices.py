@@ -61,11 +61,50 @@ def validate_invoice(pdf_bytes: bytes) -> dict:
     return _json_or_raise(response, "Invoice validation")
 
 
-def send_invoice(pdf_bytes: bytes, *, token: Token | None = None) -> dict:
+def find_sent_invoice(
+    document_number: str, *, token: Token | None = None
+) -> dict | None:
+    """Return the invoice SuperPDP already has with this number, if any.
+
+    The API cannot filter on the number, so every outgoing invoice is listed.
+
+    Args:
+        document_number: Number of the invoice (BT-1), e.g. "2026-10-003".
+        token: Authentication token.
+
+    Returns:
+        The invoice as listed by the API, or None if it was never sent.
+    """
+    token = token or get_access_token()
+    params: dict[str, str | list[str]] = {
+        "direction": "out",
+        "expand[]": ["en_invoice"],
+        "limit": "1000",
+    }
+    while True:
+        response = niquests.get(
+            f"{API_BASE}/invoices",
+            params=params,
+            headers=_auth_headers(token),
+            timeout=30,
+        )
+        page = _json_or_raise(response, "Listing sent invoices")
+        for invoice in page["data"]:
+            if (invoice.get("en_invoice") or {}).get("number") == document_number:
+                return invoice
+        if not page["has_after"] or not page["data"]:
+            return None
+        params["starting_after_id"] = str(page["data"][-1]["id"])
+
+
+def send_invoice(
+    pdf_bytes: bytes, *, external_id: str | None = None, token: Token | None = None
+) -> dict:
     """Send an PDF/A-3 invoice document to SuperPDP as the authenticated seller.
 
     Args:
         pdf_bytes: PDF/A-3 bytes of the invoice to validate.
+        external_id: Identifier of the invoice on our side, kept by SuperPDP.
         token: Authentication token.
 
     Returns:
@@ -75,6 +114,7 @@ def send_invoice(pdf_bytes: bytes, *, token: Token | None = None) -> dict:
     _, xml_bytes = get_xml_from_pdf(pdf_bytes)
     response = niquests.post(
         f"{API_BASE}/invoices",
+        params={"external_id": external_id} if external_id else None,
         data=xml_bytes,
         headers=_auth_headers(token),
         timeout=30,

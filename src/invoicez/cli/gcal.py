@@ -398,7 +398,7 @@ def bill(
                 paths.git_dir,
                 paths.assets_dir,
                 paths.build_dir,
-                paths.pdf_dir,
+                paths.sendbox_dir,
             )
     console.print(
         f"\n{outcomes.count('written')} written, {outcomes.count('skipped')} "

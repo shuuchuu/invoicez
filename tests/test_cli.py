@@ -15,6 +15,7 @@ from yaml import safe_load as yaml_safe_load
 from invoicez.building.xml.builder import build_xml
 from invoicez.building.xml.variables_to_bt_converter import convert
 from invoicez.cancellation import resolve_cancellation
+from invoicez.exceptions import InvoicezError
 from invoicez.paths import Paths
 from invoicez.variables import Variables
 
@@ -56,7 +57,7 @@ def test_run(document_path: Path, n_pages: int) -> None:
 
     paths = Paths()
 
-    pdf_path = (paths.pdf_dir / document_path.name).with_suffix(".pdf")
+    pdf_path = (paths.sendbox_dir / document_path.name).with_suffix(".pdf")
     with pdf_path.open("rb") as fh:
         pages = list(extract_pages(fh))
     with pdf_path.open("rb") as fh:
@@ -120,7 +121,7 @@ def test_cancel(working_dir: Path) -> None:
     with raises(SystemExit):
         main("run", path_cancel.name)
 
-    pdf_path = working_dir / "pdf" / path_cancel.with_suffix(".pdf").name
+    pdf_path = working_dir / "sendbox" / path_cancel.with_suffix(".pdf").name
     with pdf_path.open("rb") as fh:
         text = extract_text(fh)
     assert "Avoir pour" in text
@@ -135,6 +136,17 @@ def test_cancel(working_dir: Path) -> None:
     assert line_name.text == (
         "Avoir pour « Journée de formation très spécifique basée sur BDA »"  # ruff: ignore[ambiguous-unicode-character-string]
     )
+
+
+def test_cancel_by_number(working_dir: Path) -> None:
+    from invoicez.cli import main
+
+    with raises(SystemExit):
+        main("cancel", "2020-10-002")
+
+    path_cancel = working_dir / f"{datetime.now():%Y-%m}-001-Entreprise client.yml"
+    content = yaml_safe_load(path_cancel.read_text(encoding="utf8"))
+    assert content["cancels"] == "2020-10-002"
 
 
 @mark.parametrize(
@@ -261,3 +273,103 @@ def test_source_rejects_unknown_kind() -> None:
 
     with raises(ValidationError):
         Variables.from_mappings(global_data, {**document_data, "source": source})
+
+
+def test_run_by_number_builds_in_root_sendbox(
+    working_dir: Path, monkeypatch: Any
+) -> None:
+    from invoicez.cli import main
+
+    monkeypatch.chdir(working_dir / "company2")
+    with raises(SystemExit):
+        main("run", "2020-10-001")
+
+    assert (working_dir / "sendbox" / "2020-10-001-Company.pdf").is_file()
+    assert not (working_dir / "company2" / "sendbox").exists()
+
+
+def test_resolve_document_rejects_non_yaml_files(working_dir: Path) -> None:
+    pdf_path = working_dir / "invoice.pdf"
+    pdf_path.write_bytes(b"%PDF")
+    with raises(InvoicezError, match="not a YAML document"):
+        Paths().resolve_document("invoice.pdf")
+    with raises(InvoicezError, match="Could not find an invoice"):
+        Paths().resolve_document("1999-01-001")
+
+
+@fixture
+def superpdp(monkeypatch: Any) -> dict[str, Any]:
+    """Stand in for SuperPDP in the send command.
+
+    Returns:
+        The state of the fake: set "sent" to the invoice SuperPDP already has, and
+        read the external ids of the invoices sent in "external_ids".
+    """
+    from invoicez.cli import send
+
+    state: dict[str, Any] = {"sent": None, "external_ids": []}
+
+    def send_invoice(_: bytes, *, external_id: str) -> dict[str, Any]:
+        state["external_ids"].append(external_id)
+        return {"id": 42}
+
+    monkeypatch.setattr(send, "find_sent_invoice", lambda _: state["sent"])
+    monkeypatch.setattr(
+        send, "validate_invoice", lambda _: {"data": [{"is_valid": True}]}
+    )
+    monkeypatch.setattr(send, "send_invoice", send_invoice)
+    return state
+
+
+def test_send_archives_the_sent_invoice(
+    working_dir: Path, superpdp: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    send("2020-10-001", dry_run=False)
+
+    assert superpdp["external_ids"] == ["2020-10-001"]
+    assert not (working_dir / "sendbox" / "2020-10-001-Company.pdf").exists()
+    archived = working_dir / "archive" / "company1" / "2020" / "2020-10-001-Company.pdf"
+    assert "Burger Queen" in extract_text(archived)
+
+
+def test_send_archives_credit_notes_under_the_cancelled_company(
+    working_dir: Path, superpdp: dict[str, Any]
+) -> None:
+    from invoicez.cli import main
+    from invoicez.cli.send import send
+
+    with raises(SystemExit):
+        main("cancel", "company1/2020-10-001-Company.yml")
+    number = f"{datetime.now():%Y-%m}-001"
+
+    send(number, dry_run=False)
+
+    archived = working_dir / "archive" / "company1" / f"{datetime.now():%Y}"
+    assert (archived / f"{number}-Company.pdf").is_file()
+
+
+def test_send_dry_run_leaves_the_invoice_in_sendbox(
+    working_dir: Path, superpdp: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    send("company1/2020-10-001-Company.yml")
+
+    assert superpdp["external_ids"] == []
+    assert (working_dir / "sendbox" / "2020-10-001-Company.pdf").is_file()
+    assert not (working_dir / "archive").exists()
+
+
+def test_send_refuses_invoices_already_sent(
+    working_dir: Path, superpdp: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    superpdp["sent"] = {"id": 7}
+    with raises(InvoicezError, match="already sent"):
+        send("2020-10-001", dry_run=False)
+
+    assert superpdp["external_ids"] == []
+    assert not (working_dir / "sendbox").exists()

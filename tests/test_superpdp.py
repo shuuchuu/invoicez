@@ -5,14 +5,14 @@ from typing import Any
 import niquests
 from pytest import MonkeyPatch, fixture, raises
 
-from invoicez.cli.send import send
 from invoicez.exceptions import InvoicezError
 from invoicez.superpdp import invoices
 from invoicez.superpdp.auth import Token
 
 TOKEN = Token(access_token="token", expires_at=None)
+# Keyword arguments of the requests made to SuperPDP, in order.
+calls: list[dict[str, Any]] = []
 PDF = Path(__file__).parent / "test_cli" / "pdf" / "2020-10-001-Company.pdf"
-VALID_REPORT = {"data": [{"is_valid": True, "subreports": []}]}
 
 
 def _response(status_code: int, body: Any) -> niquests.Response:
@@ -33,7 +33,13 @@ def replies(monkeypatch: MonkeyPatch) -> list[niquests.Response]:
         The queue, to fill in the order the calls are made.
     """
     queue: list[niquests.Response] = []
-    monkeypatch.setattr(invoices.niquests, "post", lambda *_, **__: queue.pop(0))
+
+    def reply(*_: Any, **kwargs: Any) -> niquests.Response:
+        calls.append(kwargs)
+        return queue.pop(0)
+
+    monkeypatch.setattr(invoices.niquests, "post", reply)
+    monkeypatch.setattr(invoices.niquests, "get", reply)
     monkeypatch.setattr(invoices, "get_access_token", lambda: TOKEN)
     return queue
 
@@ -72,15 +78,42 @@ def test_send_invoice_raises_on_non_json_error(
         invoices.send_invoice(PDF.read_bytes())
 
 
-def test_send_prints_invoice_id(replies: list[niquests.Response], capsys: Any) -> None:
-    replies.extend([_response(200, VALID_REPORT), _response(200, {"id": 42})])
-    send(PDF, dry_run=False)
-    assert "id 42" in capsys.readouterr().out
+def test_send_invoice_passes_external_id(replies: list[niquests.Response]) -> None:
+    calls.clear()
+    replies.append(_response(200, {"id": 42}))
+    invoices.send_invoice(PDF.read_bytes(), external_id="2020-10-001")
+    assert calls[0]["params"] == {"external_id": "2020-10-001"}
 
 
-def test_send_stops_on_invalid_invoice(replies: list[niquests.Response]) -> None:
-    invalid = {"data": [{"is_valid": False, "error": "bad", "subreports": []}]}
-    replies.extend([_response(200, invalid), _response(200, {"id": 42})])
-    with raises(InvoicezError, match="validation failed"):
-        send(PDF, dry_run=False)
-    assert len(replies) == 1
+def _page(numbers: list[str], *, first_id: int, has_after: bool) -> niquests.Response:
+    data = [
+        {"id": first_id + i, "en_invoice": {"number": number}}
+        for i, number in enumerate(numbers)
+    ]
+    return _response(
+        200, {"data": data, "count": 3, "has_before": False, "has_after": has_after}
+    )
+
+
+def test_find_sent_invoice_reads_every_page(
+    replies: list[niquests.Response],
+) -> None:
+    calls.clear()
+    replies.extend(
+        [
+            _page(["2020-10-001", "2020-10-002"], first_id=1, has_after=True),
+            _page(["2020-10-003"], first_id=3, has_after=False),
+        ]
+    )
+    assert invoices.find_sent_invoice("2020-10-003") == {
+        "id": 3,
+        "en_invoice": {"number": "2020-10-003"},
+    }
+    assert calls[1]["params"]["starting_after_id"] == "2"
+
+
+def test_find_sent_invoice_returns_none_when_never_sent(
+    replies: list[niquests.Response],
+) -> None:
+    replies.append(_page(["2020-10-001"], first_id=1, has_after=False))
+    assert invoices.find_sent_invoice("2020-10-002") is None
