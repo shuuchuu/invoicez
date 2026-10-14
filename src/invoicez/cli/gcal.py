@@ -150,7 +150,9 @@ def _print_diagnostics(
             highlight=False,
         )
     if hidden:
-        console.print(f"{hidden} diagnostics about events before start_date: --all")
+        console.print(
+            f"{hidden} diagnostics hidden (infos, or events before start_date): --all"
+        )
 
 
 def _shown_diagnostics(

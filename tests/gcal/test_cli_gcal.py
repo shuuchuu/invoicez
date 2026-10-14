@@ -86,7 +86,7 @@ def test_status(data_dir: Path, capsys: Any) -> None:
     assert "before_cutoff" not in output
     assert "144 other engagements" in output
     # The short events of 2023 and the ignored descriptions.
-    assert "4 diagnostics about events before start_date" in output
+    assert "4 diagnostics hidden (infos, or events before start_date)" in output
 
 
 def test_status_all(data_dir: Path, capsys: Any) -> None:
