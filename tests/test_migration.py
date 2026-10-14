@@ -8,7 +8,8 @@ from pytest import mark, raises
 from yaml import safe_dump, safe_load
 
 from invoicez.exceptions import InvoicezError
-from invoicez.migration.config import migrate_config_mapping
+from invoicez.gcal.settings import GcalSettings
+from invoicez.migration.config import migrate_config_mapping, migrate_gcal_settings
 from invoicez.migration.documents import (
     DocumentMigrationError,
     migrate_document_mapping,
@@ -145,6 +146,98 @@ def test_migrated_mapping_is_structurally_valid_variables() -> None:
     variables = Variables.from_mappings(new, invoice_mapping)
     assert variables.user.siren == "829167196"
     assert variables.company.name == "Orsys"
+
+
+_OLD_GCAL_CONFIG: dict[str, Any] = {
+    "title_pattern": "(?P<multipart>->)?(?P<company>.*) - (?P<training>.*) - "
+    "(?P<place>.*)",
+    "rates": {
+        "orsys": {
+            "trainings": {
+                "default": {"training_day": 690, "preparation_day": 500},
+                "t2": {"training_day": 690, "preparation_day": 500},
+            },
+            "places": {"paris": 220},
+        },
+        "sparks": {
+            "trainings": {
+                "default": {"training_day": 690, "preparation_day": 500},
+                "t2": {"training_day": 750, "preparation_day": 500},
+            },
+            "places": None,
+        },
+    },
+    "trainings": {
+        "bda": {"name": "Big Data Analytics", "company": "orsys"},
+        "drn": {"name": "Deep Learning", "company": "orsys", "rate": "t2"},
+        "pav": {"name": "Python avancé", "company": "sparks", "rate": "t2"},
+        "ml1": {"name": "Machine Learning", "company": "eni"},
+    },
+}
+
+
+def test_migrate_gcal_settings_title_pattern() -> None:
+    section, warnings = migrate_gcal_settings(_OLD_GCAL_CONFIG)
+
+    assert section["title_pattern"].startswith("(?P<continuation>->)?")
+    assert any("'continuation'" in w for w in warnings)
+
+
+def test_migrate_gcal_settings_rates() -> None:
+    section, warnings = migrate_gcal_settings(_OLD_GCAL_CONFIG)
+
+    # default is the same in every company, t2 is not.
+    assert section["rates"] == {
+        "default": {"day": 690, "preparation_day": 500},
+        "orsys-t2": {"day": 690, "preparation_day": 500},
+        "sparks-t2": {"day": 750, "preparation_day": 500},
+    }
+    assert any("rates.orsys.places: dropped (paris: 220)" in w for w in warnings)
+
+
+def test_migrate_gcal_settings_trainings() -> None:
+    section, warnings = migrate_gcal_settings(_OLD_GCAL_CONFIG)
+
+    assert section["trainings"] == {
+        "orsys": {
+            "bda": {"name": "Big Data Analytics", "rate": "default"},
+            "drn": {"name": "Deep Learning", "rate": "orsys-t2"},
+        },
+        "sparks": {"pav": {"name": "Python avancé", "rate": "sparks-t2"}},
+        "eni": {"ml1": {"name": "Machine Learning", "rate": "TODO"}},
+    }
+    assert any(w.startswith("trainings.ml1.rate:") for w in warnings)
+
+
+def test_migrated_gcal_settings_are_valid_once_filled() -> None:
+    old = {
+        **_OLD_GCAL_CONFIG,
+        "trainings": dict(list(_OLD_GCAL_CONFIG["trainings"].items())[:3]),
+    }
+    section, warnings = migrate_gcal_settings(old)
+
+    assert section["start_date"] == "TODO"
+    assert any(w.startswith("start_date:") for w in warnings)
+    assert any(w.startswith("templates:") for w in warnings)
+    section["start_date"] = "2026-10-01"
+    section["templates"] = dict.fromkeys(section["templates"], "x")
+    settings = GcalSettings.model_validate(section)
+    assert settings.trainings["orsys"]["drn"].rate == "orsys-t2"
+
+
+def test_migrate_config_gcal_cli(tmp_path: Path, capsys: Any) -> None:
+    from invoicez.cli import main
+
+    old_config = tmp_path / "config.yml"
+    old_config.write_text(safe_dump(_OLD_GCAL_CONFIG), encoding="utf8")
+
+    with raises(SystemExit):
+        main("migrate-config", str(old_config), "--gcal")
+
+    output = capsys.readouterr().out
+    assert output.startswith("# TODO: ")
+    assert safe_load(output)["gcal"]["rates"]["default"]["day"] == 690
+    assert not (tmp_path / "variables.yml").exists()
 
 
 _COMPANIES = {"Orsys": "orsys", "Sparks Formation": "sparks"}

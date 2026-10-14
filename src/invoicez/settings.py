@@ -4,10 +4,13 @@ from typing import Self
 from pydantic import BaseModel
 from yaml import safe_load
 
+from invoicez.gcal.settings import GcalSettings
+
 
 class Settings(BaseModel, extra="forbid", frozen=True):
     quote_template: str
     invoice_template: str
+    gcal: GcalSettings | None = None
 
     @classmethod
     def from_path(cls, path: Path) -> Self:

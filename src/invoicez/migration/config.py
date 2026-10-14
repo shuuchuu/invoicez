@@ -2,10 +2,12 @@ import re
 from typing import Any
 
 # Dropped entirely: not part of the Variables schema (extra="forbid"), so
-# they cannot live in the migrated variables.yml. Whatever pricing/naming
-# logic reads them outside of invoicez needs to keep reading them from the
-# original config.yml (or a separate file).
+# they cannot live in the migrated variables.yml. rates, trainings and
+# title_pattern are migrated to settings.yml by migrate_gcal_settings.
 _DROPPED_TOP_LEVEL_KEYS = ("rates", "trainings", "name_template", "title_pattern")
+
+_TODO = "TODO"
+_DEFAULT_RATE_TIER = "default"
 
 # Companies known to invoice against a contract (BT-12) rather than the
 # default purchase order (BT-13).
@@ -193,9 +195,104 @@ def migrate_config_mapping(old: dict[str, Any]) -> tuple[dict[str, Any], list[st
     if dropped:
         warnings.append(
             f"{', '.join(dropped)}: not part of the Variables schema "
-            '(extra="forbid"), so they were not carried over. Keep them '
-            "in the original config.yml (or a separate file) for whatever "
-            "pricing/naming logic reads them outside of invoicez."
+            '(extra="forbid"), so they were not carried over. Migrate rates, '
+            "trainings and title_pattern to settings.yml with "
+            "`invoicez migrate-config --gcal`; name_template is replaced by "
+            "invoice_template in settings.yml."
         )
 
     return new, warnings
+
+
+def _migrate_rates(
+    old_rates: dict[str, Any], warnings: list[str]
+) -> tuple[dict[str, Any], dict[tuple[str, str], str]]:
+    """Flatten per-company rate tiers into named rates.
+
+    A tier with the same values in every company that defines it keeps its
+    name; otherwise each company gets its own "<company>-<tier>" rate.
+
+    Returns:
+        The rates, and the rate name of each (company, tier).
+    """
+    tiers: dict[str, dict[str, dict[str, Any]]] = {}
+    for company, company_rates in old_rates.items():
+        for tier, rate in (company_rates.get("trainings") or {}).items():
+            new_rate = {"day": rate["training_day"]}
+            if "preparation_day" in rate:
+                new_rate["preparation_day"] = rate["preparation_day"]
+            tiers.setdefault(tier, {})[company] = new_rate
+        if places := company_rates.get("places"):
+            fees = ", ".join(f"{place}: {fee}" for place, fee in places.items())
+            warnings.append(
+                f"rates.{company}.places: dropped ({fees}); add travel lines by "
+                "hand to the drafted documents."
+            )
+
+    rates: dict[str, Any] = {}
+    names: dict[tuple[str, str], str] = {}
+    for tier, by_company in tiers.items():
+        shared = len({tuple(sorted(rate.items())) for rate in by_company.values()}) == 1
+        for company, rate in by_company.items():
+            name = tier if shared else f"{company}-{tier}"
+            rates[name] = rate
+            names[company, tier] = name
+    return rates, names
+
+
+def _migrate_trainings(
+    old_trainings: dict[str, Any],
+    rate_names: dict[tuple[str, str], str],
+    warnings: list[str],
+) -> dict[str, Any]:
+    trainings: dict[str, Any] = {}
+    for token, old_training in old_trainings.items():
+        company = old_training["company"]
+        tier = old_training.get("rate", _DEFAULT_RATE_TIER)
+        rate = rate_names.get((company, tier))
+        if rate is None:
+            rate = _TODO
+            warnings.append(
+                f"trainings.{token}.rate: no rate {tier!r} for company {company!r}."
+            )
+        trainings.setdefault(company, {})[token] = {
+            "name": old_training["name"],
+            "rate": rate,
+        }
+    return trainings
+
+
+def migrate_gcal_settings(old: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    """Build the gcal section of settings.yml from an old-format config.yml.
+
+    Returns:
+        The gcal section, plus a list of human-readable warnings about
+        everything that could not be derived automatically and needs review.
+    """
+    warnings: list[str] = []
+
+    title_pattern = old["title_pattern"].replace("(?P<multipart>", "(?P<continuation>")
+    if title_pattern != old["title_pattern"]:
+        warnings.append("title_pattern: group 'multipart' renamed 'continuation'.")
+    rates, rate_names = _migrate_rates(old.get("rates") or {}, warnings)
+    trainings = _migrate_trainings(old.get("trainings") or {}, rate_names, warnings)
+
+    warnings.append(
+        "start_date: to fill; engagements ending before it are ignored (decision D5)."
+    )
+    warnings.append(
+        "templates: to fill, as Jinja strings for the document description and "
+        "the day, half-day and preparation lines."
+    )
+    return {
+        "start_date": _TODO,
+        "title_pattern": title_pattern,
+        "templates": {
+            "description": _TODO,
+            "day_line": _TODO,
+            "half_day_line": _TODO,
+            "preparation_line": _TODO,
+        },
+        "rates": rates,
+        "trainings": trainings,
+    }, warnings
