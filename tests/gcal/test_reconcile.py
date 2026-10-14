@@ -22,7 +22,10 @@ _START_DATE = date(2026, 9, 1)
 
 
 def _engagement(
-    *event_days: int, legacy_invoice: str | None = None, preparation_days: float = 0
+    *event_days: int,
+    legacy_invoice: str | None = None,
+    preparation_days: float = 0,
+    tentative: bool = False,
 ) -> Engagement:
     sessions = [
         Session(
@@ -30,6 +33,7 @@ def _engagement(
             html_link="link",
             title="Orsys - BDA - cv",
             continuation=i > 0,
+            tentative=tentative and i == 0,
             company="Orsys",
             training="BDA",
             place="cv",
@@ -150,6 +154,22 @@ def test_unbilled_states(tmp_path: Path) -> None:
     )
 
 
+def test_tentative(tmp_path: Path) -> None:
+    index = scan_documents(tmp_path)
+
+    # Over or not: never billed while unconfirmed.
+    assert _state(_engagement(-7, -6, tentative=True), index) == ("tentative", ())
+    assert _state(_engagement(7, tentative=True), index) == ("tentative", ())
+    assert _state(_engagement(-60, tentative=True), index) == ("before_cutoff", ())
+
+
+def test_billed_tentative_stays_billed(tmp_path: Path) -> None:
+    engagement = _engagement(-7, -6, tentative=True)
+    _invoice(tmp_path, "2026-10-004", engagement)
+
+    assert _state(engagement, scan_documents(tmp_path))[0] == "billed"
+
+
 def test_billed(tmp_path: Path) -> None:
     engagement = _engagement(-7, -6)
     _invoice(tmp_path, "2026-10-004", engagement)
@@ -247,18 +267,21 @@ def test_fixture(
             for e in engagements
         )
 
-    # 27 engagements carry a hand-written invoice number; 12 are not over.
+    # 27 engagements carry a hand-written invoice number; 13 are unconfirmed
+    # bookings, 11 of them to come.
     assert states(gcal_settings.start_date) == {
-        "unbilled": 118,
+        "unbilled": 116,
         "billed_by_hand": 27,
-        "upcoming": 12,
+        "upcoming": 1,
+        "tentative": 13,
     }
     # With the data repo's start_date, only the engagement ending today is
     # left to bill.
     assert states(_TODAY) == {
         "before_cutoff": 117,
         "billed_by_hand": 27,
-        "upcoming": 12,
+        "upcoming": 1,
+        "tentative": 11,
         "unbilled": 1,
     }
     assert orphaned_documents(index, engagements) == []

@@ -88,15 +88,21 @@ def test_title_groups(gcal_settings: GcalSettings) -> None:
     events = [
         _all_day("Orsys - BDA - cv - Session Alpha", "2026-10-05", "2026-10-06"),
         _all_day("  -> Sparks Formation - PAV - Nantes ", "2026-10-12", "2026-10-13"),
+        # Unconfirmed bookings.
+        _all_day("? Orsys - PYA - CV - Intra Acme", "2026-11-23", "2026-11-24"),
+        _all_day("? -> Orsys - PYA - CV - Intra Acme", "2026-11-30", "2026-12-01"),
     ]
 
     sessions, _ = parse_events(events, gcal_settings)
 
     assert [
-        (s.continuation, s.company, s.training, s.place, s.extra) for s in sessions
+        (s.tentative, s.continuation, s.company, s.training, s.place, s.extra)
+        for s in sessions
     ] == [
-        (False, "Orsys", "BDA", "cv", "Session Alpha"),
-        (True, "Sparks Formation", "PAV", "Nantes", None),
+        (False, False, "Orsys", "BDA", "cv", "Session Alpha"),
+        (False, True, "Sparks Formation", "PAV", "Nantes", None),
+        (True, False, "Orsys", "PYA", "CV", "Intra Acme"),
+        (True, True, "Orsys", "PYA", "CV", "Intra Acme"),
     ]
 
 

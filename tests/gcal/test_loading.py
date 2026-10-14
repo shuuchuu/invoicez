@@ -68,10 +68,10 @@ def test_load_gcal_invalid(data_dir: Path) -> None:
 
 def test_load_gcal_unknown_company(data_dir: Path) -> None:
     variables = safe_load((data_dir / "variables.yml").read_text(encoding="utf8"))
-    del variables["companies"]["company_7"]
+    del variables["companies"]["company_5"]
     (data_dir / "variables.yml").write_text(safe_dump(variables), encoding="utf8")
 
-    with raises(InvoicezError, match="company_7"):
+    with raises(InvoicezError, match="company_5"):
         load_gcal(data_dir / "settings.yml", data_dir / "variables.yml")
 
 
@@ -145,11 +145,16 @@ def test_analyse(
     assert Counter(s.classification.state for s in analysis.engagements) == {
         "before_cutoff": 117,
         "billed_by_hand": 27,
-        "upcoming": 12,
+        "upcoming": 1,
+        "tentative": 11,
         "unbilled": 1,
     }
     priced = [s for s in analysis.engagements if s.pricing is not None]
-    assert {s.classification.state for s in priced} == {"unbilled", "upcoming"}
+    assert {s.classification.state for s in priced} == {
+        "unbilled",
+        "upcoming",
+        "tentative",
+    }
     assert len(priced) == 13
     assert Counter(d.level for d in analysis.diagnostics) == {"warning": 2, "info": 2}
     assert analysis.orphans == ()
@@ -180,11 +185,20 @@ def test_analyse_only_prices_what_may_be_drafted(
 def test_analyse_reports_missing_rates_before_billing_day(
     raw_events: list[dict[str, Any]], gcal_settings: GcalSettings, tmp_path: Path
 ) -> None:
+    trainings = gcal_settings.trainings
     settings = gcal_settings.model_copy(
         update={
             "start_date": date(2026, 10, 10),
             "trainings": {
-                k: v for k, v in gcal_settings.trainings.items() if k != "company_7"
+                **trainings,
+                "company_0": {
+                    k: v
+                    for k, v in trainings["company_0"].items()
+                    if k != "training_11"
+                },
+                "company_1": {
+                    k: v for k, v in trainings["company_1"].items() if k != "training_1"
+                },
             },
         }
     )
@@ -198,4 +212,31 @@ def test_analyse_reports_missing_rates_before_billing_day(
         for s in analysis.engagements
         for d in s.diagnostics
     ]
-    assert errors == [("upcoming", "error")] * 10
+    assert errors == [("upcoming", "error")] + [("tentative", "error")] * 7
+
+
+def test_analyse_warns_about_ended_tentative_engagements(
+    raw_events: list[dict[str, Any]], gcal_settings: GcalSettings, tmp_path: Path
+) -> None:
+    # From 2020, the two '? Company_0' bookings of September 2026 are over.
+    analysis = analyse(
+        raw_events, gcal_settings, scan_documents(tmp_path), today=date(2026, 10, 14)
+    )
+
+    warnings = [
+        (str(s.engagement.end), d.message.split(": ", 1)[1])
+        for s in analysis.engagements
+        for d in s.diagnostics
+    ]
+    assert warnings == [
+        (
+            "2026-09-25",
+            "unconfirmed booking over since 2026-09-25: remove its '?' to bill it, "
+            "or delete it",
+        ),
+        (
+            "2026-10-02",
+            "unconfirmed booking over since 2026-10-02: remove its '?' to bill it, "
+            "or delete it",
+        ),
+    ]

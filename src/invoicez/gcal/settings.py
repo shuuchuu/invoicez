@@ -62,7 +62,7 @@ class GcalSettings(BaseModel, extra="forbid", frozen=True):
     # Engagements ending before this date are ignored.
     start_date: date
     # Verbose regex with groups continuation, company, training, place and
-    # optionally extra.
+    # optionally extra and tentative (unconfirmed bookings, e.g. "? Orsys - …").
     title_pattern: str
     # UN/ECE Rec 20 code, as BT-130 requires (BR-CL-23).
     unit: str = "DAY"

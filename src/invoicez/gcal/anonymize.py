@@ -97,7 +97,8 @@ def _anonymize_title(match: re.Match[str], pseudonyms: Pseudonyms) -> str:
     title = f"{company_pseudonym} - {training} - {place}"
     if extra := match.groupdict().get("extra"):
         title += f" - {pseudonyms.get('Extra', extra)}"
-    return f"-> {title}" if match["continuation"] else title
+    title = f"-> {title}" if match["continuation"] else title
+    return f"? {title}" if match.groupdict().get("tentative") else title
 
 
 def _anonymize_other_title(summary: str, pseudonyms: Pseudonyms) -> str:

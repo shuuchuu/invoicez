@@ -26,10 +26,11 @@ from invoicez.gcal.reconcile import (
 from invoicez.gcal.settings import GcalSettings, check_against_variables
 from invoicez.settings import Settings
 
-# Engagements that may be drafted, now or once over: priced so that missing
-# rates show before billing day. Others need not be in the settings any more.
+# Engagements that may be drafted, now, once over or once confirmed: priced so
+# that missing rates show before billing day. Others need not be in the
+# settings any more.
 PRICED_STATES: frozenset[State] = frozenset(
-    ("unbilled", "upcoming", "billed_then_cancelled")
+    ("unbilled", "upcoming", "tentative", "billed_then_cancelled")
 )
 
 
@@ -142,6 +143,17 @@ def _status(
     pricing, diagnostics = (
         price(engagement, gcal) if classification.state in PRICED_STATES else (None, [])
     )
+    if classification.state == "tentative" and engagement.end <= today:
+        diagnostics.append(
+            Diagnostic(
+                level="warning",
+                event_id=engagement.id,
+                message=(
+                    f"{engagement.root.title!r}: unconfirmed booking over since "
+                    f"{engagement.end}: remove its '?' to bill it, or delete it"
+                ),
+            )
+        )
     return EngagementStatus(
         engagement=engagement,
         classification=classification,

@@ -28,6 +28,7 @@ _ACTION_STATES: tuple[State, ...] = (
     "unbilled",
     "billed_then_cancelled",
     "upcoming",
+    "tentative",
 )
 _LEVELS = ("error", "warning", "info")
 _LEVEL_STYLES = {"error": "bold red", "warning": "yellow", "info": "dim"}

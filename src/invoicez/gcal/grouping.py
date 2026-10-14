@@ -51,6 +51,11 @@ class Engagement(BaseModel, extra="forbid", frozen=True):
         return self.root.description
 
     @property
+    def tentative(self) -> bool:
+        # Unconfirmed as long as one of its sessions is.
+        return any(session.tentative for session in self.sessions)
+
+    @property
     def start(self) -> date:
         return self.root.start
 

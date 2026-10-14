@@ -5,6 +5,9 @@ gcal:
   start_date: 2020-01-01
   title_pattern: |
     \s*
+    (?P<tentative>
+      \? \s+
+    )?
     (?P<continuation>
       -> \s+
     )?
@@ -62,6 +65,8 @@ gcal:
       training_12: {name: Training 12 of Company_0, rate: fixture}
       training_13: {name: Training 13 of Company_0, rate: fixture}
       training_14: {name: Training 14 of Company_0, rate: fixture}
+      # Only booked so far, under '? Company_0' (tentative).
+      training_15: {name: Training 15 of Company_0, rate: fixture}
     company_1:
       training_0: {name: Training 0 of Company_1, rate: fixture}
       training_1: {name: Training 1 of Company_1, rate: default}
@@ -88,10 +93,3 @@ gcal:
       training_0: {name: Training 0 of Company_4, rate: fixture}
     company_5:
       training_0: {name: Training 0 of Company_5, rate: fixture}
-    company_6:
-      training_0: {name: Training 0 of Company_6, rate: fixture}
-      training_1: {name: Training 1 of Company_6, rate: fixture}
-    company_7:
-      training_0: {name: Training 0 of Company_7, rate: fixture}
-      training_1: {name: Training 1 of Company_7, rate: fixture}
-      training_2: {name: Training 2 of Company_7, rate: fixture}

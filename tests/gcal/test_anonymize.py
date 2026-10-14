@@ -270,3 +270,12 @@ def test_select_fixture_events_leaves_out_recurring_two_segment_events() -> None
     one_off = {"summary": "Call - Bob", **_all_day("2026-10-05", "2026-10-06")}
 
     assert select_fixture_events([birthday, one_off], _TITLE_PATTERN) == [one_off]
+
+
+def test_tentative_marker_is_kept() -> None:
+    pattern = _TITLE_PATTERN.replace("\\s*\n", "\\s*\n(?P<tentative> \\? \\s+ )?\n", 1)
+    event = {"summary": "? Orsys - BDA - CV", **_all_day("2026-10-05", "2026-10-06")}
+
+    events, _ = anonymize([event], pattern)
+
+    assert events[0]["summary"] == "? Company_0 - TRAINING_0 - CV"

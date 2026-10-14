@@ -75,7 +75,9 @@ def test_status(data_dir: Path, capsys: Any) -> None:
     output = capsys.readouterr().out
     assert output.count("│ unbilled ") == 1
     assert _UNBILLED_ID in output
-    assert output.count("│ upcoming ") == 12
+    assert output.count("│ upcoming ") == 1
+    # Unconfirmed bookings, never billed.
+    assert output.count("│ tentative ") == 11
     assert "before_cutoff" not in output
     assert "144 other engagements" in output
     # The short events of 2023 and the ignored descriptions.
@@ -95,7 +97,7 @@ def test_status_all(data_dir: Path, capsys: Any) -> None:
 
 def test_status_fails_on_errors(data_dir: Path, capsys: Any) -> None:
     settings = safe_load((data_dir / "settings.yml").read_text(encoding="utf8"))
-    del settings["gcal"]["trainings"]["company_7"]
+    del settings["gcal"]["trainings"]["company_1"]["training_1"]
     (data_dir / "settings.yml").write_text(
         safe_dump(settings, allow_unicode=True), encoding="utf8"
     )
@@ -103,9 +105,9 @@ def test_status_fails_on_errors(data_dir: Path, capsys: Any) -> None:
     assert _run("status", "--events", EVENTS) == 1
 
     output = capsys.readouterr().out
-    # Upcoming engagements are priced, so a missing training shows early.
-    assert output.count("error: ") == 10
-    assert "missing from gcal.trainings" in output
+    # Tentative engagements are priced, so a missing training shows early.
+    assert output.count("error: ") == 7
+    assert "training 'TRAINING_1' missing from gcal.trainings.company_1" in output
 
 
 def test_status_fails_on_engagements_billed_twice(

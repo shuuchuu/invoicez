@@ -55,6 +55,8 @@ class Session(BaseModel, extra="forbid", frozen=True):
     html_link: str
     title: str
     continuation: bool
+    # An unconfirmed booking (the title pattern's tentative group): never billed.
+    tentative: bool = False
     # Values keep the case of the title; settings lookups ignore case.
     company: str
     training: str
@@ -222,6 +224,7 @@ def parse_events(
                 html_link=raw.get("htmlLink", ""),
                 title=raw["summary"],
                 continuation=match.group("continuation") is not None,
+                tentative=match.groupdict().get("tentative") is not None,
                 company=match.group("company").strip(),
                 training=match.group("training").strip(),
                 place=match.group("place").strip(),

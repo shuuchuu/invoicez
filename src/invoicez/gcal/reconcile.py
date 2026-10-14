@@ -18,6 +18,8 @@ from invoicez.variables import GcalSource
 State = Literal[
     # Ends before gcal.start_date and not billed from the calendar.
     "before_cutoff",
+    # An unconfirmed booking: never billed until its title loses the marker.
+    "tentative",
     # Not over yet.
     "upcoming",
     # Over and not billed: to draft.
@@ -154,6 +156,8 @@ def classify(
         return Classification(state="billed_by_hand")
     if engagement.end < start_date:
         return Classification(state="before_cutoff")
+    if engagement.tentative:
+        return Classification(state="tentative")
     if engagement.end > today:
         return Classification(state="upcoming")
     return Classification(state="unbilled")

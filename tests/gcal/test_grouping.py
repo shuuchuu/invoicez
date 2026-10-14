@@ -194,3 +194,17 @@ def test_fixture(raw_events: list[dict[str, Any]], gcal_settings: GcalSettings) 
     }
     assert len({e.fingerprint for e in engagements}) == 157
     assert sum(len({s.kind for s in e.sessions}) == 2 for e in engagements) == 1
+
+
+def test_tentative_engagement() -> None:
+    root = _session(0)
+    sessions = [root, _session(1, continuation=True)]
+    tentative = [root.model_copy(update={"tentative": True}), sessions[1]]
+
+    [confirmed], _ = group_sessions(sessions)
+    [unconfirmed], _ = group_sessions(tentative)
+
+    assert not confirmed.tentative
+    assert unconfirmed.tentative
+    # Confirming a booking does not make it look changed.
+    assert unconfirmed.fingerprint == confirmed.fingerprint
