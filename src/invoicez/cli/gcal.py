@@ -30,6 +30,7 @@ from invoicez.gcal.reconcile import State, scan_documents
 from invoicez.numbering import get_next_document_number
 from invoicez.paths import Paths
 from invoicez.runner import run as runner_run
+from invoicez.sending import send_document
 
 app = App(name="gcal", help="Bill trainings from a Google Calendar.")
 
@@ -344,7 +345,11 @@ def _bill_one(
 
 @app.command
 def bill(
-    *ids: str, rebill: bool = False, build: bool = False, events: Path | None = None
+    *ids: str,
+    rebill: bool = False,
+    build: bool = False,
+    send: bool = False,
+    events: Path | None = None,
 ) -> int:
     """Draft invoices for engagements that are over, one at a time.
 
@@ -356,10 +361,12 @@ def bill(
             unbilled engagement.
         rebill: Allow billing again engagements whose invoice was cancelled.
         build: Build the PDF and XML of each written invoice.
+        send: Send each written invoice via SuperPDP, once confirmed (see
+            invoicez send).
         events: Read the events from this JSON file instead of Google Calendar.
 
     Returns:
-        1 if an engagement could not be drafted, else 0.
+        1 if an engagement could not be drafted or an invoice sent, else 0.
 
     Raises:
         InvoicezError: If gcal.calendar_id is not set, or an engagement asked
@@ -384,12 +391,20 @@ def bill(
         console.print("Nothing to bill.")
         return 0
     outcomes: list[str] = []
+    sent, send_failed = 0, False
     for status in selected:
         outcome, path = _bill_one(console, status, context, paths, today, calendar_id)
         outcomes.append(outcome)
         if outcome == "quit":
             break
-        if path is not None and build:
+        if path is not None and send:
+            try:
+                if send_document(console, paths, path) == "sent":
+                    sent += 1
+            except InvoicezError as error:
+                console.print(f"[bold red]error[/]: {error}", highlight=False)
+                send_failed = True
+        elif path is not None and build:
             runner_run(
                 path,
                 "main",
@@ -402,9 +417,10 @@ def bill(
             )
     console.print(
         f"\n{outcomes.count('written')} written, {outcomes.count('skipped')} "
-        f"skipped, {outcomes.count('failed')} failed."
+        f"skipped, {outcomes.count('failed')} failed"
+        + (f", {sent} sent." if send else ".")
     )
-    return 1 if "failed" in outcomes else 0
+    return 1 if "failed" in outcomes or send_failed else 0
 
 
 def _parse_pairs(pairs: tuple[str, ...]) -> dict[str, str]:

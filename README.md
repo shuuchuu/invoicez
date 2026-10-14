@@ -117,9 +117,10 @@ the French way in templates (`2,5`). Documents hold LaTeX, so `&`, `%`, `$`,
   changed since billing, billed twice, cancelled) and upcoming ones, the
   problems found in the calendar, and invoices whose events disappeared. Exits
   with 1 on an error.
-- `invoicez gcal bill [ID...] [--rebill] [--build]`: drafts the unbilled
-  engagements one at a time, after a preview and a confirmation; numbers are
-  taken at confirmation. `--build` also builds the PDF and XML in `sendbox/`.
+- `invoicez gcal bill [ID...] [--rebill] [--build] [--send]`: drafts the
+  unbilled engagements one at a time, after a preview and a confirmation;
+  numbers are taken at confirmation. `--build` also builds the PDF and XML in
+  `sendbox/`, `--send` sends each invoice written, as `invoicez send` does.
 - `invoicez gcal link [--write] [--pair ID=NUMBER...]`: links invoices made
   before by hand to their engagements, by the days they bill, so that
   `start_date` can go back to the first one. Dry run without `--write`.
@@ -131,21 +132,38 @@ which is how `tests/gcal/assets/events.json` was made.
 ## Building and sending invoices
 
 Commands taking a document accept either the path of its YAML file or its
-number, e.g. `invoicez send 2026-10-003` or `invoicez cancel 2026-10-003`. Generated files always go to the root
-of the repository, wherever the command is run from:
+number, e.g. `invoicez send 2026-10-003` or `invoicez cancel 2026-10-003`.
+Generated files always go to the root of the repository, wherever the command
+is run from:
 
 - `build/`: intermediate LaTeX and XML files, deleted by `invoicez clean`.
 - `sendbox/`: the PDFs built by `invoicez run` and `invoicez gcal bill --build`.
 - `archive/<company>/<year>/`: the PDFs of the invoices sent, as sent.
 
-`invoicez send DOCUMENT` builds the invoice in `sendbox/`, validates it with
-SuperPDP, and stops there unless given `--no-dry-run`. Once sent, its PDF moves
-to `archive/`, under the company of the document and the year of its date. It
-refuses an invoice whose number SuperPDP already has, so it is safe to run
-again.
-
 `build/` and `sendbox/` are generated and can be ignored by git; `archive/` is
 the record of what was sent.
+
+- `invoicez send DOCUMENT [--yes]`: builds the invoice in `sendbox/`, validates
+  it with SuperPDP, previews it (buyer, electronic address, total) and sends it
+  once confirmed. It then waits a few seconds for SuperPDP to process it and
+  moves its PDF to `archive/`, under the company of the document and the year
+  of its date, unless SuperPDP found it invalid. It refuses an invoice whose
+  number SuperPDP already has, unless SuperPDP found it invalid, so it is safe
+  to run again. `--yes` sends without asking.
+- `invoicez status [--all]`: the invoices needing action, read from the
+  repository and SuperPDP: those with a problem (invalid, rejected, refused,
+  disputed, or failing at the administration), those the buyer's platform has
+  not confirmed receiving two days after SuperPDP handed them over (`not
+  delivered?`), those not sent yet, and those awaiting payment. Invoices dated before the first one SuperPDP has are taken
+  as sent before it. Invoices cancelled by a credit note are left out. Exits
+  with 1 on a problem.
+
+Expired or revoked SuperPDP tokens are renewed on the fly.
+
+### Shell completion
+
+`invoicez --install-completion` installs shell completion. With zsh, it also
+completes invoice numbers for `run`, `send` and `cancel`.
 
 ## Usage
 

@@ -1,3 +1,5 @@
+from typing import Any
+
 import niquests
 from facturx import get_xml_from_pdf
 
@@ -61,62 +63,86 @@ def validate_invoice(pdf_bytes: bytes) -> dict:
     return _json_or_raise(response, "Invoice validation")
 
 
-def find_sent_invoice(
-    document_number: str, *, token: Token | None = None
-) -> dict | None:
-    """Return the invoice SuperPDP already has with this number, if any.
-
-    The API cannot filter on the number, so every outgoing invoice is listed.
+def _request(method: str, path: str, action: str, **kwargs: Any) -> dict:
+    """Make an authenticated request, logging in again once if the token is refused.
 
     Args:
-        document_number: Number of the invoice (BT-1), e.g. "2026-10-003".
-        token: Authentication token.
+        method: HTTP method.
+        path: Path of the endpoint, under the API base.
+        action: What the request is doing, used in error messages.
+        **kwargs: Passed to niquests.
 
     Returns:
-        The invoice as listed by the API, or None if it was never sent.
+        Decoded JSON body of the response.
     """
-    token = token or get_access_token()
-    params: dict[str, str | list[str]] = {
-        "direction": "out",
-        "expand[]": ["en_invoice"],
-        "limit": "1000",
-    }
-    while True:
-        response = niquests.get(
-            f"{API_BASE}/invoices",
-            params=params,
+
+    def call(token: Token) -> niquests.Response:
+        return niquests.request(
+            method,
+            f"{API_BASE}{path}",
             headers=_auth_headers(token),
             timeout=30,
+            **kwargs,
         )
-        page = _json_or_raise(response, "Listing sent invoices")
-        for invoice in page["data"]:
-            if (invoice.get("en_invoice") or {}).get("number") == document_number:
-                return invoice
+
+    response = call(get_access_token())
+    # A cached token can be revoked before it expires; nothing was done with it.
+    if response.status_code == 401:
+        response = call(get_access_token(force_refresh=True))
+    return _json_or_raise(response, action)
+
+
+def list_sent_invoices() -> list[dict]:
+    """Return every invoice sent through SuperPDP, with its number and events.
+
+    Returns:
+        The invoices, by increasing id.
+    """
+    params: dict[str, str | list[str]] = {
+        "direction": "out",
+        "expand[]": ["en_invoice", "events"],
+        "limit": "1000",
+    }
+    invoices: list[dict] = []
+    while True:
+        page = _request("GET", "/invoices", "Listing sent invoices", params=params)
+        invoices.extend(page["data"])
         if not page["has_after"] or not page["data"]:
-            return None
+            return invoices
         params["starting_after_id"] = str(page["data"][-1]["id"])
 
 
-def send_invoice(
-    pdf_bytes: bytes, *, external_id: str | None = None, token: Token | None = None
-) -> dict:
+def invoice_number(invoice: dict) -> str | None:
+    return (invoice.get("en_invoice") or {}).get("number")
+
+
+def get_invoice(invoice_id: int) -> dict:
+    """Return an invoice sent through SuperPDP, with its events.
+
+    Args:
+        invoice_id: SuperPDP id of the invoice.
+
+    Returns:
+        The invoice.
+    """
+    return _request("GET", f"/invoices/{invoice_id}", "Fetching the invoice")
+
+
+def send_invoice(pdf_bytes: bytes, *, external_id: str | None = None) -> dict:
     """Send an PDF/A-3 invoice document to SuperPDP as the authenticated seller.
 
     Args:
         pdf_bytes: PDF/A-3 bytes of the invoice to validate.
         external_id: Identifier of the invoice on our side, kept by SuperPDP.
-        token: Authentication token.
 
     Returns:
         The created invoice, as returned by the API endpoint.
     """
-    token = token or get_access_token()
     _, xml_bytes = get_xml_from_pdf(pdf_bytes)
-    response = niquests.post(
-        f"{API_BASE}/invoices",
+    return _request(
+        "POST",
+        "/invoices",
+        "Invoice sending",
         params={"external_id": external_id} if external_id else None,
         data=xml_bytes,
-        headers=_auth_headers(token),
-        timeout=30,
     )
-    return _json_or_raise(response, "Invoice sending")

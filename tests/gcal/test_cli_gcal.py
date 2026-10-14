@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from git import Repo
-from pytest import fixture, raises
+from pytest import fail, fixture, raises
 from yaml import safe_dump, safe_load
 
 from invoicez.cli import gcal as gcal_cli
@@ -338,6 +338,42 @@ def test_bill_build(data_dir: Path, answers: list[str], monkeypatch: Any) -> Non
     assert _run("bill", "--build", "--events", EVENTS) == 0
 
     assert [path.name for path in built] == ["Facture-2026-10-001-Company_0-REFAA1.yml"]
+
+
+def test_bill_send(
+    data_dir: Path, answers: list[str], monkeypatch: Any, capsys: Any
+) -> None:
+    sent: list[Path] = []
+
+    def send_document(console: Any, paths: Any, path: Path) -> str:
+        sent.append(path)
+        return "sent"
+
+    monkeypatch.setattr(gcal_cli, "send_document", send_document)
+    monkeypatch.setattr(gcal_cli, "runner_run", lambda *args: fail("built twice"))
+    answers.extend(["REFAA1", "y"])
+
+    assert _run("bill", "--send", "--build", "--events", EVENTS) == 0
+
+    assert [path.name for path in sent] == ["Facture-2026-10-001-Company_0-REFAA1.yml"]
+    assert "1 written, 0 skipped, 0 failed, 1 sent." in capsys.readouterr().out
+
+
+def test_bill_send_failure(
+    data_dir: Path, answers: list[str], monkeypatch: Any, capsys: Any
+) -> None:
+    def send_document(console: Any, paths: Any, path: Path) -> str:
+        msg = "rejected"
+        raise InvoicezError(msg)
+
+    monkeypatch.setattr(gcal_cli, "send_document", send_document)
+    answers.extend(["REFAA1", "y"])
+
+    assert _run("bill", "--send", "--events", EVENTS) == 1
+
+    output = capsys.readouterr().out
+    assert "error: rejected" in output
+    assert "1 written, 0 skipped, 0 failed, 0 sent." in output
 
 
 def test_bill_without_calendar_id(data_dir: Path) -> None:

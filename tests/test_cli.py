@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from shutil import copytree
+from shutil import copytree, which
+from subprocess import run
 from typing import Any
 from xml.etree import ElementTree
 
@@ -8,7 +9,7 @@ from facturx import get_xml_from_pdf
 from git import Repo
 from pdfminer.high_level import extract_pages, extract_text
 from pydantic import ValidationError
-from pytest import fixture, mark, raises
+from pytest import fail, fixture, mark, raises
 from yaml import safe_dump, safe_load
 from yaml import safe_load as yaml_safe_load
 
@@ -297,41 +298,68 @@ def test_resolve_document_rejects_non_yaml_files(working_dir: Path) -> None:
         Paths().resolve_document("1999-01-001")
 
 
+def _event(code: str, text: str = "", *, at: int = 0) -> dict[str, Any]:
+    return {
+        "id": at,
+        "created_at": f"2026-10-14T10:00:{at:02}Z",
+        "status_code": code,
+        "status_text": text or code,
+    }
+
+
 @fixture
 def superpdp(monkeypatch: Any) -> dict[str, Any]:
-    """Stand in for SuperPDP in the send command.
+    """Stand in for SuperPDP, and for the user confirming, when sending.
 
     Returns:
-        The state of the fake: set "sent" to the invoice SuperPDP already has, and
-        read the external ids of the invoices sent in "external_ids".
+        The state of the fake: "sent" lists the invoices SuperPDP already has,
+        "events" are those of an invoice once sent, "answer" is the reply to the
+        confirmation, and "external_ids" lists those of the invoices sent.
     """
-    from invoicez.cli import send
+    from invoicez import sending
 
-    state: dict[str, Any] = {"sent": None, "external_ids": []}
+    monkeypatch.setattr(sending, "STATUS_WAIT_SECONDS", 0)
+    state: dict[str, Any] = {
+        "sent": [],
+        "events": [_event("fr:201", "Émise par la plateforme")],
+        "answer": "y",
+        "external_ids": [],
+    }
 
     def send_invoice(_: bytes, *, external_id: str) -> dict[str, Any]:
         state["external_ids"].append(external_id)
         return {"id": 42}
 
-    monkeypatch.setattr(send, "find_sent_invoice", lambda _: state["sent"])
+    monkeypatch.setattr(sending, "list_sent_invoices", lambda: state["sent"])
     monkeypatch.setattr(
-        send, "validate_invoice", lambda _: {"data": [{"is_valid": True}]}
+        sending, "validate_invoice", lambda _: {"data": [{"is_valid": True}]}
     )
-    monkeypatch.setattr(send, "send_invoice", send_invoice)
+    monkeypatch.setattr(sending, "send_invoice", send_invoice)
+    monkeypatch.setattr(
+        sending, "get_invoice", lambda id_: {"id": id_, "events": state["events"]}
+    )
+    monkeypatch.setattr("builtins.input", lambda _: state["answer"])
     return state
 
 
+_SENDBOX_PDF = Path("sendbox/2020-10-001-Company.pdf")
+_ARCHIVED_PDF = Path("archive/company1/2020/2020-10-001-Company.pdf")
+
+
 def test_send_archives_the_sent_invoice(
-    working_dir: Path, superpdp: dict[str, Any]
+    working_dir: Path, superpdp: dict[str, Any], capsys: Any
 ) -> None:
     from invoicez.cli.send import send
 
-    send("2020-10-001", dry_run=False)
+    send("2020-10-001")
 
     assert superpdp["external_ids"] == ["2020-10-001"]
-    assert not (working_dir / "sendbox" / "2020-10-001-Company.pdf").exists()
-    archived = working_dir / "archive" / "company1" / "2020" / "2020-10-001-Company.pdf"
-    assert "Burger Queen" in extract_text(archived)
+    assert not (working_dir / _SENDBOX_PDF).exists()
+    assert "Burger Queen" in extract_text(working_dir / _ARCHIVED_PDF)
+    output = capsys.readouterr().out
+    assert "0225:XXXXXXXXX_XXXXX" in output
+    assert "1800.00 EUR incl. VAT" in output
+    assert "Émise par la plateforme (fr:201)" in output
 
 
 def test_send_archives_credit_notes_under_the_cancelled_company(
@@ -344,22 +372,34 @@ def test_send_archives_credit_notes_under_the_cancelled_company(
         main("cancel", "company1/2020-10-001-Company.yml")
     number = f"{datetime.now():%Y-%m}-001"
 
-    send(number, dry_run=False)
+    send(number)
 
     archived = working_dir / "archive" / "company1" / f"{datetime.now():%Y}"
     assert (archived / f"{number}-Company.pdf").is_file()
 
 
-def test_send_dry_run_leaves_the_invoice_in_sendbox(
+def test_send_not_confirmed_leaves_the_invoice_in_sendbox(
     working_dir: Path, superpdp: dict[str, Any]
 ) -> None:
     from invoicez.cli.send import send
 
+    superpdp["answer"] = "n"
     send("company1/2020-10-001-Company.yml")
 
     assert superpdp["external_ids"] == []
-    assert (working_dir / "sendbox" / "2020-10-001-Company.pdf").is_file()
+    assert (working_dir / _SENDBOX_PDF).is_file()
     assert not (working_dir / "archive").exists()
+
+
+def test_send_yes_does_not_ask(
+    working_dir: Path, superpdp: dict[str, Any], monkeypatch: Any
+) -> None:
+    from invoicez.cli.send import send
+
+    monkeypatch.setattr("builtins.input", lambda _: fail("asked"))
+    send("2020-10-001", yes=True)
+
+    assert (working_dir / _ARCHIVED_PDF).is_file()
 
 
 def test_send_refuses_invoices_already_sent(
@@ -367,9 +407,181 @@ def test_send_refuses_invoices_already_sent(
 ) -> None:
     from invoicez.cli.send import send
 
-    superpdp["sent"] = {"id": 7}
-    with raises(InvoicezError, match="already sent"):
-        send("2020-10-001", dry_run=False)
+    superpdp["sent"] = [
+        {
+            "id": 7,
+            "en_invoice": {"number": "2020-10-001"},
+            "events": [_event("fr:203", "Mise à disposition")],
+        }
+    ]
+    with raises(InvoicezError, match=r"already sent \(SuperPDP id 7, Mise à"):
+        send("2020-10-001")
 
     assert superpdp["external_ids"] == []
     assert not (working_dir / "sendbox").exists()
+
+
+def test_send_again_invoices_found_invalid(superpdp: dict[str, Any]) -> None:
+    from invoicez.cli.send import send
+
+    superpdp["sent"] = [
+        {
+            "id": 7,
+            "en_invoice": {"number": "2020-10-001"},
+            "events": [_event("api:invalid")],
+        }
+    ]
+    send("2020-10-001")
+
+    assert superpdp["external_ids"] == ["2020-10-001"]
+
+
+def test_send_leaves_invoices_found_invalid_in_sendbox(
+    working_dir: Path, superpdp: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    superpdp["events"] = [_event("api:uploaded", at=1), _event("api:invalid", at=2)]
+    with raises(InvoicezError, match="found invoice 2020-10-001 invalid"):
+        send("2020-10-001")
+
+    assert (working_dir / _SENDBOX_PDF).is_file()
+    assert not (working_dir / "archive").exists()
+
+
+def test_send_reports_problems_after_archiving(
+    working_dir: Path, superpdp: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    superpdp["events"] = [_event("fr:213", "Rejetée")]
+    with raises(InvoicezError, match=r"Rejetée \(fr:213\)"):
+        send("2020-10-001")
+
+    assert (working_dir / _ARCHIVED_PDF).is_file()
+
+
+def _sent(number: str, issue_date: str, *codes: str) -> dict[str, Any]:
+    return {
+        "id": abs(hash(number)),
+        "en_invoice": {"number": number, "issue_date": issue_date},
+        "events": [_event(code, at=at) for at, code in enumerate(codes)],
+    }
+
+
+def _rows(output: str) -> list[list[str]]:
+    # The cells of each row of the table printed.
+    return [
+        [cell.strip() for cell in line.split("│")[1:-1]]
+        for line in output.splitlines()
+        if line.startswith("│")
+    ]
+
+
+def _status(monkeypatch: Any, sent: list[dict[str, Any]], *args: str) -> int:
+    from invoicez.cli import main, status
+
+    monkeypatch.setenv("COLUMNS", "200")
+    monkeypatch.setattr(status, "list_sent_invoices", lambda: sent)
+    with raises(SystemExit) as exit_info:
+        main("status", *args)
+    return int(exit_info.value.code or 0)
+
+
+def test_status_shows_invoices_needing_action(monkeypatch: Any, capsys: Any) -> None:
+    # 2020-10-003 is a credit note cancelling 2020-10-002, of company2.
+    sent = [_sent("2020-10-002", "2020-10-15", "api:uploaded", "fr:203")]
+    assert _status(monkeypatch, sent) == 0
+
+    output = capsys.readouterr().out
+    rows = _rows(output)
+    assert ["not sent", "2020-10-003", "2020-10-18", "company2"] in [
+        r[:4] for r in rows
+    ]
+    assert ["not sent", "BURGERQUEEN-TRICATEL-0001"] in [r[:2] for r in rows]
+    # Older than the first invoice SuperPDP has, so sent before it.
+    assert "2020-10-001" not in output
+    # Cancelled by 2020-10-003.
+    assert "2020-10-002" not in output
+    assert "2 other invoices" in output
+
+    assert _status(monkeypatch, sent, "--all") == 0
+    rows = [row[:2] for row in _rows(capsys.readouterr().out)]
+    assert ["not sent", "2020-10-001"] in rows
+    assert ["cancelled", "2020-10-002"] in rows
+
+
+def test_status_shows_invoices_awaiting_payment(monkeypatch: Any, capsys: Any) -> None:
+    sent = [
+        _sent("2020-10-001", "2020-10-07", "fr:203"),
+        _sent("BURGERQUEEN-TRICATEL-0001", "2026-04-12", "fr:203", "fr:212"),
+    ]
+    assert _status(monkeypatch, sent) == 0
+
+    rows = [row[:2] for row in _rows(capsys.readouterr().out)]
+    assert rows == [["not sent", "2020-10-003"], ["awaiting payment", "2020-10-001"]]
+
+
+def test_status_flags_invoices_not_delivered(monkeypatch: Any, capsys: Any) -> None:
+    from invoicez.cli import status
+
+    sent = [_sent("2020-10-001", "2020-10-07", "api:uploaded", "fr:200", "fr:201")]
+    monkeypatch.setattr(status, "_now", lambda: datetime(2026, 10, 15, tzinfo=UTC))
+    assert _status(monkeypatch, sent) == 0
+    rows = {row[1]: row for row in _rows(capsys.readouterr().out)}
+    assert rows["2020-10-001"][0] == "awaiting payment"
+
+    monkeypatch.setattr(status, "_now", lambda: datetime(2026, 10, 20, tzinfo=UTC))
+    assert _status(monkeypatch, sent) == 0
+    rows = _rows(capsys.readouterr().out)
+    # Shown right after problems.
+    assert rows[0][:2] == ["not delivered?", "2020-10-001"]
+    assert rows[0][4] == "fr:201 (fr:201) since 2026-10-14"
+
+
+def test_status_fails_on_problems(monkeypatch: Any, capsys: Any) -> None:
+    sent = [_sent("2020-10-001", "2020-10-07", "fr:203", "fr:210")]
+    assert _status(monkeypatch, sent) == 1
+    rows = _rows(capsys.readouterr().out)
+    assert rows[0][:2] == ["problem", "2020-10-001"]
+    assert rows[0][4] == "fr:210 (fr:210)"
+
+
+def test_status_ignores_problems_of_invoices_cancelled_by_credit_note(
+    monkeypatch: Any, capsys: Any
+) -> None:
+    sent = [_sent("2020-10-002", "2020-10-15", "fr:203", "fr:210")]
+    assert _status(monkeypatch, sent) == 0
+    assert "2020-10-002" not in capsys.readouterr().out
+
+
+def test_complete_documents(working_dir: Path, capsys: Any) -> None:
+    from invoicez.cli import main
+
+    (working_dir / "quote.yml").write_text(
+        "document_number: 2020-10-009\nquote: true\n", encoding="utf8"
+    )
+    with raises(SystemExit):
+        main("cancel", "2020-10-001")
+    with raises(SystemExit):
+        main("complete-documents")
+
+    lines = capsys.readouterr().out.splitlines()
+    assert "2020-10-001:company1 2020-10-07" in lines
+    assert f"{datetime.now():%Y-%m}-001:credit note for 2020-10-001 " in "\n".join(
+        lines
+    )
+    assert not any(line.startswith("2020-10-009") for line in lines)
+
+
+def test_zsh_completion_offers_documents() -> None:
+    from invoicez.cli import app
+
+    script = app.generate_completion(shell="zsh", prog_name="invoicez")
+
+    assert script.startswith("#compdef invoicez\n\n_invoicez_documents() {")
+    assert script.count(":_invoicez_documents'") == 6
+    assert "complete-documents" not in script.split("_invoicez_documents() {")[2:]
+    if zsh := which("zsh"):
+        check = run([zsh, "-n"], input=script, text=True, check=False)
+        assert check.returncode == 0
