@@ -249,14 +249,14 @@ def test_fixture(
 
     # 27 engagements carry a hand-written invoice number; 12 are not over.
     assert states(gcal_settings.start_date) == {
-        "unbilled": 117,
+        "unbilled": 118,
         "billed_by_hand": 27,
         "upcoming": 12,
     }
     # With the data repo's start_date, only the engagement ending today is
     # left to bill.
     assert states(_TODAY) == {
-        "before_cutoff": 116,
+        "before_cutoff": 117,
         "billed_by_hand": 27,
         "upcoming": 12,
         "unbilled": 1,

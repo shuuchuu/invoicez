@@ -230,5 +230,5 @@ def test_fixture(
         for i, engagement in enumerate(engagements, start=1)
     ]
 
-    assert len(documents) == 156
+    assert len(documents) == 157
     assert sum("reference" in document for document in documents) == 33

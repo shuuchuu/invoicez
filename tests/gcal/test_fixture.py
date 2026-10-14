@@ -17,5 +17,5 @@ def test_fixture_counts(
     matching = [e for e in raw_events if pattern.fullmatch(e["summary"])]
 
     assert len(raw_events) == 200
-    assert len(matching) == 193
-    assert sum(1 for e in matching if "date" in e["start"]) == 159
+    assert len(matching) == 194
+    assert sum(1 for e in matching if "date" in e["start"]) == 160

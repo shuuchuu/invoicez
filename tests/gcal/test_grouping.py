@@ -179,18 +179,18 @@ def test_fixture(raw_events: list[dict[str, Any]], gcal_settings: GcalSettings) 
 
     engagements, diagnostics = group_sessions(sessions)
 
-    # 193 events - 35 continuations - 2 short roots; no orphan, the longest
+    # 194 events - 35 continuations - 2 short roots; no orphan, the longest
     # gap is exactly 31 days.
-    assert len(engagements) == 156
+    assert len(engagements) == 157
     assert diagnostics == []
-    assert sum(len(e.sessions) for e in engagements) == 191
+    assert sum(len(e.sessions) for e in engagements) == 192
     assert Counter(len(e.sessions) for e in engagements) == {
-        1: 139,
+        1: 140,
         2: 11,
         3: 1,
         4: 1,
         5: 1,
         6: 3,
     }
-    assert len({e.fingerprint for e in engagements}) == 156
+    assert len({e.fingerprint for e in engagements}) == 157
     assert sum(len({s.kind for s in e.sessions}) == 2 for e in engagements) == 1

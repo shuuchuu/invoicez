@@ -220,10 +220,10 @@ def test_fixture(raw_events: list[dict[str, Any]], gcal_settings: GcalSettings) 
 
     assert [d for _, diagnostics in priced for d in diagnostics] == []
     pricings = [pricing for pricing, _ in priced if pricing is not None]
-    assert len(pricings) == 156
-    # 444 days in day blocks, 32 half-days, 3 preparation days.
-    assert sum(p.days for p in pricings) == 460
-    assert sum(line.n for p in pricings for line in p.lines) == 463
+    assert len(pricings) == 157
+    # 446 days in day blocks, 32 half-days, 3 preparation days.
+    assert sum(p.days for p in pricings) == 462
+    assert sum(line.n for p in pricings for line in p.lines) == 465
     for pricing in pricings:
         for line in pricing.lines:
             assert InvoiceLine.model_validate(line.model_dump()) == line

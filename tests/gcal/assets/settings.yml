@@ -76,6 +76,8 @@ gcal:
       training_10: {name: Training 10 of Company_1, rate: fixture}
       training_11: {name: Training 11 of Company_1, rate: fixture}
       training_12: {name: Training 12 of Company_1, rate: fixture}
+      # An IAO-based intra, titled without the pattern in the calendar (D2).
+      training_13: {name: Training 13 of Company_1, rate: fixture}
     company_2:
       training_0: {name: Training 0 of Company_2, rate: fixture}
       training_1: {name: Training 1 of Company_2, rate: fixture}

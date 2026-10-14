@@ -221,16 +221,16 @@ def test_descriptions(gcal_settings: GcalSettings) -> None:
 def test_fixture(raw_events: list[dict[str, Any]], gcal_settings: GcalSettings) -> None:
     sessions, diagnostics = parse_events(raw_events, gcal_settings)
 
-    # 193 matching events, of which 2 are too short to bill.
-    assert len(sessions) == 191
+    # 194 matching events, of which 2 are too short to bill.
+    assert len(sessions) == 192
     assert Counter((d.level, d.message.split(": ", 1)[1][:9]) for d in diagnostics) == {
         ("warning", "lasts 0.5"): 1,
         ("warning", "lasts 0.7"): 1,
         # The two short events hold the HTML descriptions not counted here.
         ("info", "descripti"): 2,
     }
-    assert Counter(s.kind for s in sessions) == {"day": 159, "half_day": 32}
-    assert sum(s.quantity for s in sessions if s.kind == "day") == 444
+    assert Counter(s.kind for s in sessions) == {"day": 160, "half_day": 32}
+    assert sum(s.quantity for s in sessions if s.kind == "day") == 446
     assert sum(s.continuation for s in sessions) == 35
     assert sum(s.description.ref is not None for s in sessions) == 33
     assert sum(s.description.preparation_days for s in sessions) == 3
