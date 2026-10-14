@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from copy import deepcopy
 from datetime import date, timedelta
 from functools import cached_property
 from typing import Any, Literal, Self
@@ -134,7 +135,8 @@ class Variables(BaseModel, extra="forbid", frozen=True):
     def from_mappings(
         cls, global_mapping: Mapping[str, Any], invoice_mapping: Mapping[str, Any]
     ) -> Self:
-        data = {k: v for k, v in global_mapping.items() if k != "companies"}
+        # Deep copy: merging changes the nested mappings in place.
+        data = deepcopy({k: v for k, v in global_mapping.items() if k != "companies"})
         always_merger.merge(data, invoice_mapping)
         data["company"] = {
             **global_mapping["company"],
