@@ -49,13 +49,11 @@ _SLASH_DATE_RE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
 _ITEM_SEPARATORS_RE = re.compile(r"\\\\|\\&|,")
 _RANGE_SEPARATORS_RE = re.compile(r"--|\u2013|-")
 
-_DEMI_JOURNEE_RE = re.compile(r"\bdemi-jour", re.IGNORECASE)
+_DEMI_JOURNEE_RE = re.compile(r"\bdemi-(jour)", re.IGNORECASE)
 _JOUR_RE = re.compile(r"\bjour|\bquotidien", re.IGNORECASE)
 # UN/ECE Rec 20 codes, as BT-130 requires (BR-CL-23). Rec 20 has no
-# half-day: those lines keep their legacy n and pu (as printed) with C62
-# (one), rather than becoming 0.5 DAY.
+# half-day: half-day lines become half a DAY at the day price.
 _DAY_UNIT = "DAY"
-_HALF_DAY_UNIT = "C62"
 _LUMP_SUM_UNIT = "LS"
 
 
@@ -153,15 +151,23 @@ def contiguous_spans(days: list[date]) -> list[tuple[date, date]]:
 
 
 def infer_unit(description: str) -> str:
-    if _DEMI_JOURNEE_RE.search(description):
-        return _HALF_DAY_UNIT
-    if _JOUR_RE.search(description):
+    if _DEMI_JOURNEE_RE.search(description) or _JOUR_RE.search(description):
         return _DAY_UNIT
     return _LUMP_SUM_UNIT
 
 
 def _is_priced_per_day(description: str) -> bool:
-    return infer_unit(description) != _LUMP_SUM_UNIT
+    return infer_unit(description) == _DAY_UNIT
+
+
+def _as_day_label(match: re.Match[str]) -> str:
+    # "Demi-journée" -> "Journée", "demi-journée" -> "journée".
+    day = match[1]
+    return day[0].upper() + day[1:] if match[0][0].isupper() else day
+
+
+def _as_int_if_whole(number: float) -> float:
+    return int(number) if float(number).is_integer() else number
 
 
 def _migrate_product(
@@ -170,8 +176,17 @@ def _migrate_product(
     path = f"products[{index}]"
     rest = {k: v for k, v in product.items() if k != "date"}
     if "unit" not in rest:
-        rest["unit"] = infer_unit(str(rest.get("description", "")))
+        description = str(rest.get("description", ""))
+        rest["unit"] = infer_unit(description)
         warnings.append(f"{path}.unit: inferred {rest['unit']!r}")
+        if _DEMI_JOURNEE_RE.search(description):
+            rest["description"] = _DEMI_JOURNEE_RE.sub(_as_day_label, description)
+            rest["n"] = _as_int_if_whole(rest["n"] / 2)
+            rest["pu"] = _as_int_if_whole(rest["pu"] * 2)
+            warnings.append(
+                f"{path}: half-days as {rest['description']!r}, n={rest['n']} DAY "
+                f"at pu={rest['pu']}"
+            )
     if "date" not in product:
         return [rest]
 
@@ -200,7 +215,7 @@ def _migrate_product(
                 f"{path}: cannot split n={rest['n']} over {product['date']!r} by days"
             )
             return [product]
-        lines.append(_with_span(span, {**rest, "n": int(n) if n.is_integer() else n}))
+        lines.append(_with_span(span, {**rest, "n": _as_int_if_whole(n)}))
     split_n = ", ".join(str(line["n"]) for line in lines)
     warnings.append(
         f"{path}: split {product['date']!r} (n={rest['n']}) into one line per "

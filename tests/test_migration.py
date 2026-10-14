@@ -303,13 +303,41 @@ def test_migrate_document_line_dates(
     assert sum(p["n"] * p["pu"] for p in new["products"]) == n * 750
 
 
+def test_migrate_document_half_days_become_half_a_day() -> None:
+    product = {"description": "Demi-journée de formation BDA", "n": 3, "pu": 375}
+
+    new, _ = _migrate(_legacy_document(products=[product]))
+
+    assert new["products"] == [
+        {"description": "Journée de formation BDA", "n": 1.5, "pu": 750, "unit": "DAY"}
+    ]
+
+
+@mark.parametrize(
+    "description,expected",
+    [
+        ("Demi-jour de formation", "Jour de formation"),
+        ("Formation en demi-journée", "Formation en journée"),
+        ("Formation en DEMI-JOURNÉE", "Formation en JOURNÉE"),
+    ],
+)
+def test_migrate_document_half_day_labels(description: str, expected: str) -> None:
+    product = {"description": description, "n": 2, "pu": 375}
+
+    new, _ = _migrate(_legacy_document(products=[product]))
+
+    assert new["products"][0]["description"] == expected
+
+
 def test_migrate_document_half_day_split() -> None:
     product = {"date": "4,6/11/2020", "description": "Demi-journée", "n": 2, "pu": 375}
 
     new, _ = _migrate(_legacy_document(products=[product]))
 
-    assert [p["n"] for p in new["products"]] == [1, 1]
-    assert {p["unit"] for p in new["products"]} == {"C62"}
+    assert [(p["n"], p["pu"], p["unit"]) for p in new["products"]] == [
+        (0.5, 750, "DAY"),
+        (0.5, 750, "DAY"),
+    ]
 
 
 def test_migrate_document_lump_sum_over_several_spans_is_an_error() -> None:
@@ -326,19 +354,19 @@ def test_migrate_document_lump_sum_over_several_spans_is_an_error() -> None:
         ("Jour de formation", "DAY"),
         ("Forfait de frais de déplacement journalier", "DAY"),
         ("Forfait quotidien de frais de déplacement", "DAY"),
-        ("Demi-journée de formation", "C62"),
-        ("Demi-jour de formation", "C62"),
+        ("Demi-journée de formation", "DAY"),
+        ("Demi-jour de formation", "DAY"),
         ("Frais de déplacement sur justificatifs", "LS"),
         ("Frais de déjeuner sur justificatif", "LS"),
         ("QCM de 5 questions MLB", "LS"),
     ],
 )
 def test_migrate_document_unit_inference(description: str, unit: str) -> None:
-    product = {"description": description, "n": 1, "pu": 100}
+    product = {"description": description, "n": 2, "pu": 100}
 
     new, warnings = _migrate(_legacy_document(products=[product]))
 
-    assert new["products"] == [{**product, "unit": unit}]
+    assert new["products"][0]["unit"] == unit
     assert f"products[0].unit: inferred {unit!r}" in warnings
 
 
