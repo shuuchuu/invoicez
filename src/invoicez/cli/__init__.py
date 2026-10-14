@@ -22,6 +22,9 @@ app.command("invoicez.cli.login:login")
 app.command("invoicez.cli.migrate:migrate_config")
 app.command("invoicez.cli.migrate_documents:migrate_documents")
 app.command("invoicez.cli.install_skill:install_skill")
+app.command(
+    "invoicez.cli.gcal:app", name="gcal", help="Bill trainings from a Google Calendar."
+)
 
 
 ExistingYAMLPath = Annotated[

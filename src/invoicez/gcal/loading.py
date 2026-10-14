@@ -4,6 +4,7 @@ import json
 from collections.abc import Mapping, Sequence
 from datetime import date
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
@@ -79,6 +80,23 @@ def load_gcal(settings_path: Path, variables_path: Path) -> GcalContext:
     )
 
 
+def google_api() -> ModuleType:
+    """Import the Google adapter, which needs the gcal extra.
+
+    Returns:
+        The invoicez.gcal.google module.
+
+    Raises:
+        InvoicezError: If the gcal extra is not installed.
+    """
+    try:
+        from invoicez.gcal import google
+    except ImportError as e:
+        msg = "Google Calendar access needs the gcal extra: pip install invoicez[gcal]"
+        raise InvoicezError(msg) from e
+    return google
+
+
 def load_events(
     gcal: GcalSettings, *, events_file: Path | None = None
 ) -> list[dict[str, Any]]:
@@ -110,11 +128,7 @@ def load_events(
             "'invoicez gcal calendars' to find it"
         )
         raise InvoicezError(msg)
-    try:
-        from invoicez.gcal import google
-    except ImportError as e:
-        msg = "Google Calendar access needs the gcal extra: pip install invoicez[gcal]"
-        raise InvoicezError(msg) from e
+    google = google_api()
     service = google.calendar_service(google.credentials())
     return google.fetch_events(service, gcal.calendar_id)
 
