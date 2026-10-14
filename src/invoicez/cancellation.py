@@ -15,6 +15,8 @@ def resolve_cancellation(data: dict[str, Any], git_dir: Path) -> dict[str, Any]:
 
     resolved["previous_document_number"] = data["cancels"]
     resolved["previous_document_date"] = resolved["date"]
+    # The credit note's due date derives from its own date, not the invoice's.
+    resolved.pop("payment_due_date", None)
     if "description" in resolved:
         resolved["description"] = f"Facture d'avoir pour « {resolved['description']} »"  # ruff: ignore[ambiguous-unicode-character-string]
     resolved["products"] = [

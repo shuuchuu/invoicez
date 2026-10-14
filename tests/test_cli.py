@@ -8,7 +8,7 @@ from facturx import get_xml_from_pdf
 from git import Repo
 from pdfminer.high_level import extract_pages, extract_text
 from pytest import fixture, mark, raises
-from yaml import safe_load
+from yaml import safe_dump, safe_load
 from yaml import safe_load as yaml_safe_load
 
 from invoicez.building.xml.builder import build_xml
@@ -25,6 +25,7 @@ NS = {
         "urn:un:unece:uncefact:data:standard:"
         "ReusableAggregateBusinessInformationEntity:100"
     ),
+    "udt": "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100",
 }
 
 
@@ -181,3 +182,46 @@ def test_generate_xml(document_path: Path) -> None:
 
     assert xml_bytes is not None
     assert (paths.build_dir / document_path.with_suffix(".xml").name).exists()
+
+
+def _xml_due_date(document_data: dict[str, Any]) -> str | None:
+    paths = Paths()
+    global_data = safe_load(paths.variables.read_text(encoding="utf8"))
+    document_data = resolve_cancellation(document_data, paths.git_dir)
+    variables = Variables.from_mappings(global_data, document_data)
+    root = ElementTree.fromstring(build_xml("due-date", variables, paths.build_dir))
+    due_date = root.find(
+        ".//ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime/udt:DateTimeString",
+        NS,
+    )
+    assert due_date is not None
+    return due_date.text
+
+
+@mark.parametrize(
+    "payment_due_date,expected",
+    [(None, "20201114"), ("2020-12-31", "20201231")],
+)
+def test_payment_due_date(payment_due_date: str | None, expected: str) -> None:
+    document_path = Path("company2/2020-10-002-Entreprise client.yml")
+    document_data = safe_load(document_path.read_text(encoding="utf8"))
+    if payment_due_date is not None:
+        document_data["payment_due_date"] = payment_due_date
+
+    assert _xml_due_date(document_data) == expected
+
+
+def test_payment_due_date_not_inherited_by_credit_note() -> None:
+    document_path = Path("company2/2020-10-002-Entreprise client.yml")
+    document_data = safe_load(document_path.read_text(encoding="utf8"))
+    document_data["payment_due_date"] = "2020-12-31"
+    document_path.write_text(safe_dump(document_data), encoding="utf8")
+
+    credit_note = {
+        "document_number": "2021-01-001",
+        "date": "2021-01-10",
+        "cancels": "2020-10-002",
+    }
+
+    # 2021-01-10 + company2's maximum_days (30).
+    assert _xml_due_date(credit_note) == "20210209"

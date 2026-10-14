@@ -103,6 +103,8 @@ class Variables(BaseModel, extra="forbid", frozen=True):
     # Client's contract or purchase order reference, mapped to BT-12 or
     # BT-13 depending on company.reference_kind.
     reference: str | None = None
+    # Overrides the due date computed from company.maximum_days (BT-9).
+    payment_due_date: date | None = None
     tva: TVA
     user: Seller
     company: Company
@@ -114,6 +116,8 @@ class Variables(BaseModel, extra="forbid", frozen=True):
     @computed_field
     @cached_property
     def due_date(self) -> date:
+        if self.payment_due_date is not None:
+            return self.payment_due_date
         return self.date + timedelta(days=self.company.maximum_days)
 
     @classmethod
