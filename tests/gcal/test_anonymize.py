@@ -203,11 +203,11 @@ def test_anonymized_settings() -> None:
     assert section["title_pattern"] == _TITLE_PATTERN
     assert section["trainings"] == {
         "company_0": {
-            "training_0": {"name": "Training 0 of Company_0", "rate": "t2"},
-            "training_1": {"name": "Training 1 of Company_0", "rate": "TODO"},
+            "training_0": {"name": "Training 0 of Company 0", "rate": "t2"},
+            "training_1": {"name": "Training 1 of Company 0", "rate": "TODO"},
         },
         "company_1": {
-            "training_0": {"name": "Training 0 of Company_1", "rate": "TODO"},
+            "training_0": {"name": "Training 0 of Company 1", "rate": "TODO"},
         },
     }
     assert unknown == ["Company_0/Training_1", "Company_1/Training_0"]

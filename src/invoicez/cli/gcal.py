@@ -1,23 +1,29 @@
 from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from cyclopts import App, Parameter
 from rich.console import Console
 from rich.table import Table
+from yaml import safe_dump
 
+from invoicez.exceptions import InvoicezError
 from invoicez.gcal.diagnostics import Diagnostic
+from invoicez.gcal.drafting import draft, draft_path
 from invoicez.gcal.loading import (
     Analysis,
     EngagementStatus,
+    GcalContext,
     analyse,
     google_api,
     load_events,
     load_gcal,
 )
 from invoicez.gcal.reconcile import State, scan_documents
+from invoicez.numbering import get_next_document_number
 from invoicez.paths import Paths
+from invoicez.runner import run as runner_run
 
 app = App(name="gcal", help="Bill trainings from a Google Calendar.")
 
@@ -36,6 +42,13 @@ _LEVEL_STYLES = {"error": "bold red", "warning": "yellow", "info": "dim"}
 
 def _today() -> date:
     return date.today()
+
+
+def _ask(prompt: str) -> str:
+    try:
+        return input(prompt)
+    except EOFError:
+        return "q"
 
 
 @app.command
@@ -197,3 +210,190 @@ def status(
         s.classification.state == "billed_twice" for s in analysis.engagements
     )
     return 1 if failed else 0
+
+
+def _refusal(status: EngagementStatus, rebill: bool) -> str | None:
+    # Why an engagement asked for by id cannot be billed, if it cannot.
+    e = status.engagement
+    state = status.classification.state
+    documents = ", ".join(status.classification.documents)
+    if state == "unbilled" or (state == "billed_then_cancelled" and rebill):
+        return None
+    if state == "billed_then_cancelled":
+        return f"{e.id}: billed then cancelled ({documents}): add --rebill"
+    if state == "changed_since_billing":
+        return (
+            f"{e.id}: changed since it was billed ({documents}): cancel it with "
+            f"'invoicez cancel <file>', then 'invoicez gcal bill {e.id} --rebill'"
+        )
+    return f"{e.id}: {state}, not billable"
+
+
+def _select(
+    analysis: Analysis, ids: tuple[str, ...], rebill: bool
+) -> list[EngagementStatus]:
+    if not ids:
+        return [s for s in analysis.engagements if s.classification.state == "unbilled"]
+    by_id = {s.engagement.id: s for s in analysis.engagements}
+    refusals = [
+        f"{engagement_id}: no such engagement"
+        if engagement_id not in by_id
+        else _refusal(by_id[engagement_id], rebill)
+        for engagement_id in ids
+    ]
+    if errors := [r for r in refusals if r is not None]:
+        raise InvoicezError("\n".join(errors))
+    return [by_id[engagement_id] for engagement_id in ids]
+
+
+def _preview(
+    console: Console, status: EngagementStatus, document: dict[str, Any], path: Path
+) -> None:
+    e = status.engagement
+    console.print(
+        f"\n[bold]{e.root.title}[/] ({e.id}), {e.start} → {e.end}", highlight=False
+    )
+    table = Table("Start", "End", "Description", "n", "Unit", "PU", "Amount")
+    total = 0.0
+    for product in document["products"]:
+        amount = product["n"] * product["pu"]
+        total += amount
+        table.add_row(
+            str(product.get("start", "")),
+            str(product.get("end", "")),
+            product["description"],
+            f"{product['n']:g}",
+            product["unit"],
+            f"{product['pu']:.2f}",
+            f"{amount:.2f}",
+        )
+    console.print(table)
+    console.print(
+        f"Total: {total:.2f}\nDescription: {document['description']}\n"
+        f"Reference: {document.get('reference', '')}\nFile: {path}",
+        highlight=False,
+    )
+
+
+def _bill_one(
+    console: Console,
+    status: EngagementStatus,
+    context: GcalContext,
+    paths: Paths,
+    today: date,
+    calendar_id: str,
+) -> tuple[Literal["written", "skipped", "failed", "quit"], Path | None]:
+    e = status.engagement
+    if status.pricing is None:
+        for diagnostic in status.diagnostics:
+            console.print(f"[bold red]error[/]: {diagnostic.message}", highlight=False)
+        return "failed", None
+    reference = (
+        e.description.ref
+        or _ask(
+            f"\nReference for {e.root.title!r} ({e.start} → {e.end}), empty to skip: "
+        ).strip()
+    )
+    if not reference:
+        return "skipped", None
+    try:
+        document = draft(
+            e,
+            status.pricing,
+            document_number=get_next_document_number(paths.git_dir, today=today),
+            today=today,
+            reference=reference,
+            settings=context.gcal,
+            global_mapping=context.global_mapping,
+            calendar_id=calendar_id,
+        )
+    except InvoicezError as error:
+        console.print(f"[bold red]error[/]: {error}", highlight=False)
+        return "failed", None
+    path = paths.git_dir / draft_path(
+        document,
+        name=reference,
+        settings=context.settings,
+        global_mapping=context.global_mapping,
+        git_dir=paths.git_dir,
+    )
+    _preview(console, status, document, path.relative_to(paths.git_dir))
+    if path.exists():
+        console.print(f"[bold red]error[/]: {path} already exists", highlight=False)
+        return "failed", None
+    answer = _ask("Write it? [y]es, [n]o, [q]uit: ").strip().casefold()
+    if answer.startswith("q"):
+        return "quit", None
+    if not answer.startswith("y"):
+        return "skipped", None
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf8"
+    )
+    console.print(f"Wrote {path.relative_to(paths.git_dir)}", highlight=False)
+    return "written", path
+
+
+@app.command
+def bill(
+    *ids: str, rebill: bool = False, build: bool = False, events: Path | None = None
+) -> int:
+    """Draft invoices for engagements that are over, one at a time.
+
+    Each draft is previewed and written only once confirmed; its number is the
+    next free one at that moment.
+
+    Args:
+        ids: Engagements to bill (the Id column of status). Defaults to every
+            unbilled engagement.
+        rebill: Allow billing again engagements whose invoice was cancelled.
+        build: Build the PDF and XML of each written invoice.
+        events: Read the events from this JSON file instead of Google Calendar.
+
+    Returns:
+        1 if an engagement could not be drafted, else 0.
+
+    Raises:
+        InvoicezError: If gcal.calendar_id is not set, or an engagement asked
+            for cannot be billed.
+    """
+    paths = Paths()
+    context = load_gcal(paths.settings, paths.variables)
+    calendar_id = context.gcal.calendar_id
+    if calendar_id is None:
+        msg = "gcal.calendar_id is not set in settings.yml: see invoicez gcal calendars"
+        raise InvoicezError(msg)
+    today = _today()
+    analysis = analyse(
+        load_events(context.gcal, events_file=events),
+        context.gcal,
+        scan_documents(paths.git_dir),
+        today=today,
+    )
+    selected = _select(analysis, ids, rebill)
+    console = Console()
+    if not selected:
+        console.print("Nothing to bill.")
+        return 0
+    outcomes: list[str] = []
+    for status in selected:
+        outcome, path = _bill_one(console, status, context, paths, today, calendar_id)
+        outcomes.append(outcome)
+        if outcome == "quit":
+            break
+        if path is not None and build:
+            runner_run(
+                path,
+                "main",
+                paths.variables,
+                paths.jinja2_dir,
+                paths.git_dir,
+                paths.assets_dir,
+                paths.build_dir,
+                paths.pdf_dir,
+            )
+    console.print(
+        f"\n{outcomes.count('written')} written, {outcomes.count('skipped')} "
+        f"skipped, {outcomes.count('failed')} failed."
+    )
+    return 1 if "failed" in outcomes else 0

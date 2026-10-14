@@ -277,7 +277,8 @@ def anonymized_settings(
         if real_training is None:
             unknown.append(f"{company}/Training_{number}")
         trainings.setdefault(company.lower(), {})[f"training_{number}"] = {
-            "name": f"Training {number} of {company}",
+            # No "_": names end up in LaTeX, which does not escape it.
+            "name": f"Training {number} of {company.replace('_', ' ')}",
             "rate": real_training["rate"] if real_training else "TODO",
         }
     section = {

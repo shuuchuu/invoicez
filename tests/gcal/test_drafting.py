@@ -222,7 +222,8 @@ def test_fixture(
             _priced(engagement, gcal_settings),
             document_number=f"2026-10-{i:03}",
             today=_TODAY,
-            reference=engagement.description.ref,
+            # Pseudonyms (REF_0) hold a "_", which LaTeX would need escaped.
+            reference=(engagement.description.ref or "").replace("_", "-") or None,
             settings=gcal_settings,
             global_mapping=global_mapping,
             calendar_id="calendar-id",
@@ -232,3 +233,30 @@ def test_fixture(
 
     assert len(documents) == 157
     assert sum("reference" in document for document in documents) == 33
+
+
+def test_draft_refuses_unescaped_latex(
+    settings: GcalSettings, global_mapping: dict[str, Any]
+) -> None:
+    with raises(InvoicezError) as error:
+        _draft(_engagement(), settings, global_mapping, reference="CF1 & CF2")
+
+    assert str(error.value) == (
+        "the PDF would not build: reference 'CF1 & CF2' has an unescaped '&' "
+        "(write \\&)"
+    )
+    # Escaped characters and LaTeX commands are fine.
+    _draft(_engagement(), settings, global_mapping, reference=r"CF1 \& CF2")
+    named = settings.model_copy(
+        update={
+            "trainings": {
+                "orsys": {
+                    "bda": settings.trainings["orsys"]["bda"].model_copy(
+                        update={"name": r"\textit{Big} Data_Science"}
+                    )
+                }
+            }
+        }
+    )
+    with raises(InvoicezError, match=r"description .* has an unescaped '_'"):
+        _draft(_engagement(), named, global_mapping)

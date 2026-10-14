@@ -1,5 +1,6 @@
 """Draft invoice documents from priced engagements."""
 
+import re
 from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
@@ -14,6 +15,29 @@ from invoicez.gcal.settings import GcalSettings
 from invoicez.naming import name_document
 from invoicez.settings import Settings
 from invoicez.variables import InvoiceLine, Variables
+
+# Characters LaTeX reads as commands unless escaped. Documents hold LaTeX (e.g.
+# \textit{...}, \&) and the PDF templates do not escape them.
+_LATEX_SPECIAL_RE = re.compile(r"(?<!\\)[&%$#_]")
+
+
+def _check_latex(document: Mapping[str, Any]) -> None:
+    texts = {
+        "description": document["description"],
+        "reference": document.get("reference") or "",
+        **{
+            f"line {i}": product["description"]
+            for i, product in enumerate(document["products"], start=1)
+        },
+    }
+    problems = [
+        f"{field} {text!r} has an unescaped {match[0]!r} (write \\{match[0]})"
+        for field, text in texts.items()
+        if (match := _LATEX_SPECIAL_RE.search(text))
+    ]
+    if problems:
+        msg = f"the PDF would not build: {'; '.join(problems)}"
+        raise InvoicezError(msg)
 
 
 def _plain(value: float) -> int | float:
@@ -56,7 +80,8 @@ def draft(
         The document mapping, checked to build valid Variables.
 
     Raises:
-        InvoicezError: If the document would not be valid.
+        InvoicezError: If the document would not be valid, or its texts hold
+            characters that LaTeX needs escaped.
     """
     document: dict[str, Any] = {
         "document_number": document_number,
@@ -81,6 +106,7 @@ def draft(
     }
     if reference is not None:
         document["reference"] = reference
+    _check_latex(document)
     if pricing.company not in global_mapping.get("companies", {}):
         msg = f"company {pricing.company!r} missing from variables.yml"
         raise InvoicezError(msg)
