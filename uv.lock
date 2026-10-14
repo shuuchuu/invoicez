@@ -538,7 +538,7 @@ wheels = [
 
 [[package]]
 name = "invoicez"
-version = "4.1.1"
+version = "5.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "cyclopts" },
