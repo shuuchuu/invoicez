@@ -63,10 +63,10 @@ convention = "google"
 
 [bumpver]
 commit = true
+tag = true
+push = true
 commit_message = "Bump version to {new_version}"
 current_version = "6.0.0"
-push = true
-tag = true
 tag_message = "{new_version}"
 version_pattern = "MAJOR.MINOR.PATCH"
 
