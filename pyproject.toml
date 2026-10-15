@@ -31,7 +31,7 @@ dev = [
   "google-auth-oauthlib >= 1",
   "pdfminer-six >= 20260107",
   "pytest >= 8",
-  "ruff >= 0.11",
+  "ruff >= 0.16",
   "ty >= 0.0.33",
   "types-pyyaml >= 6",
 ]
@@ -51,9 +51,9 @@ target-version = "py312"
 [tool.ruff.lint]
 ignore = [
   "D1",
-  "incorrect-blank-line-before-class", # D203
-  "multi-line-summary-second-line", # D213
-  "non-empty-init-module", # RUF067
+  "incorrect-blank-line-before-class",
+  "multi-line-summary-second-line",
+  "non-empty-init-module",
 ]
 preview = true
 select = ["A", "B", "C", "D", "DOC", "E", "EM", "F", "I", "N", "PIE", "PTH", "RET", "RUF", "SIM", "SLF", "TC", "UP", "W"]
@@ -67,6 +67,7 @@ tag = true
 push = true
 commit_message = "Bump version to {new_version}"
 current_version = "6.0.0"
+pre_commit_hook = "scripts/bumpver_pre_commit.sh"
 tag_message = "{new_version}"
 version_pattern = "MAJOR.MINOR.PATCH"
 
@@ -81,4 +82,4 @@ version_pattern = "MAJOR.MINOR.PATCH"
 
 [build-system]
 build-backend = "uv_build"
-requires = ["uv_build>=0.11,<0.12.0"]
+requires = ["uv_build>=0.12.15,<0.13.0"]
