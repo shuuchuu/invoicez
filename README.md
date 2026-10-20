@@ -168,7 +168,9 @@ Expired or revoked SuperPDP tokens are renewed on the fly.
 `invoicez ledger [YEAR...] [--csv]` lists the invoices of the given years
 (the current one by default) with their training days, trainees, amounts,
 estimated social contributions and income tax, net, and sending and payment
-dates, then totals each year. `--csv` writes the invoices as CSV instead.
+dates: in a `paid` table, and a `sent` table for those not paid yet (credit
+notes go with the invoice they cancel). A last table totals each of them and
+the year. `--csv` writes the invoices as CSV instead.
 
 Invoices dated before `ledger.pivot_date` are read from a spreadsheet kept by
 hand (`ledger.spreadsheet`, an `.ods` file with one sheet per year and the
@@ -187,6 +189,15 @@ written by hand.
 Contributions take the rate in force on the invoice's date. The income tax of
 a year is spread over its invoices in order, each bearing what it adds at the
 top of the progressive scale; it assumes no other income in the household.
+
+`--forecast` adds the calendar's engagements not invoiced yet (it needs a
+`gcal` section), each priced as `invoicez gcal bill` would and dated when it
+would be billed: once over, and not before today, so past years get none.
+Below the invoices of each year, a `to bill` table lists those that are over,
+a `forecast` table those to come, dimmed when tentative (booked with a `?`),
+and the totals table gets a row for each.
+Forecasts are taxed after the invoices, from the most to the least certain.
+With `--csv`, a `forecast` column tells them apart.
 
 ```yaml
 ledger:

@@ -10,6 +10,7 @@ from zipfile import ZipFile
 from git import Repo
 from pydantic import ValidationError
 from pytest import approx, fixture, raises
+from yaml import safe_dump, safe_load
 
 from invoicez.ledger.settings import LedgerSettings
 from invoicez.ledger.spreadsheet import read_sheets
@@ -226,10 +227,14 @@ def test_ledger(working_dir: Path, monkeypatch: Any, capsys: Any) -> None:
     assert rows["2020-10-003"][4:12] == [
         "0", "", "-1620.00", "0.00", "-324.00", "-324", "-107", "-1189.00",
     ]  # fmt: skip
-    assert rows["Total"][4:11] == ["2", "8", "1800.00", "300.00", "0.00", "360", "19"]
+    # The credit note goes with the invoice it cancels, paid.
+    assert "2020: sent" not in output
+    # Label, Days, Trainees, Excl. VAT, Contrib., Income tax, Net.
+    assert rows["Paid"] == ["Paid", "2", "8", "1800.00", "360", "19", "1421.00"]
+    assert rows["Sent"] == ["Sent", "0", "0", "0.00", "0", "0", "0.00"]
+    assert rows["Total"] == ["Total", "2", "8", "1800.00", "360", "19", "1421.00"]
     assert "2026" not in rows
-    assert "3 invoices, 2 training days, 8 trainees" in output
-    assert "(1 invoices without trainees)" in output
+    assert "2020: 3 invoices (1 without trainees)" in output
     assert "collected during the year: 3420.00" in output
     assert "2020-10-002: no trainees in its document" in output
     assert "1620.00 excluding VAT in its document, but 1600.00 sent" in output
@@ -272,7 +277,7 @@ def test_credit_notes_cancel_days_and_trainees(
     assert rows["2020-10-002"][4:7] == ["3", "4", "1620.00"]
     # Its lines read "Avoir pour « Journée de formation »".
     assert rows["2020-10-003"][4:7] == ["-3", "-4", "-1620.00"]
-    assert rows["Total"][4:6] == ["2", "8"]
+    assert rows["Total"][1:3] == ["2", "8"]
 
 
 def test_ledger_csv(working_dir: Path, monkeypatch: Any, capsys: Any) -> None:
@@ -287,3 +292,168 @@ def test_ledger_csv(working_dir: Path, monkeypatch: Any, capsys: Any) -> None:
     assert rows[0]["source"] == "spreadsheet"
     assert rows[1] | {"net": "1189.00", "paid": "2020-11-20"} == rows[1]
     assert rows[1]["source"] == "documents"
+
+
+_GCAL_DIR = Path(__file__).parent / "gcal" / "assets"
+_EVENTS = str(_GCAL_DIR / "events.json")
+
+
+@fixture
+def calendar_dir(tmp_path: Path, monkeypatch: Any) -> Path:
+    from invoicez.cli import ledger
+
+    # The calendar of the gcal tests, on 2026-10-14: Id_355 is over and not
+    # billed, Id_357 confirmed and to come, Id_359, Id_363 and Id_364 tentative
+    # in 2026, others tentative in 2027.
+    gcal = safe_load((_GCAL_DIR / "settings.yml").read_text(encoding="utf8"))["gcal"]
+    variables = safe_load((DATA_DIR / "variables.yml").read_text(encoding="utf8"))
+    company = variables["companies"]["company1"]
+    variables["companies"] = {
+        key: {**company, "name": key.capitalize()} for key in gcal["trainings"]
+    }
+    (tmp_path / "variables.yml").write_text(safe_dump(variables), encoding="utf8")
+    gcal["start_date"] = date(2026, 10, 10)
+    settings = {
+        "quote_template": "{document_number}",
+        "invoice_template": "{document_number}",
+        "gcal": gcal,
+        "ledger": {
+            "contribution_rates": {date(2026, 1, 1): 0.2},
+            "income_tax": {"brackets": {2026: {10000: 0.1}}},
+        },
+    }
+    (tmp_path / "settings.yml").write_text(
+        safe_dump(settings, allow_unicode=True), encoding="utf8"
+    )
+    # An invoice for Id_354, which is then not forecast whatever its state.
+    (tmp_path / "2026-10-001.yml").write_text(
+        safe_dump(
+            {
+                "document_number": "2026-10-001",
+                "date": "2026-10-01",
+                "company": "company_0",
+                "trainees": 6,
+                "products": [
+                    {
+                        "n": 9,
+                        "pu": 1000,
+                        "unit": "DAY",
+                        "description": "Journée de formation",
+                    }
+                ],
+                "source": {
+                    "kind": "gcal",
+                    "calendar_id": "calendar-id",
+                    "event_ids": ["Id_354"],
+                    "fingerprint": "0" * 64,
+                },
+            },
+            allow_unicode=True,
+        ),
+        encoding="utf8",
+    )
+    Repo.init(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(ledger, "_today", lambda: date(2026, 10, 14))
+    return tmp_path
+
+
+def _tables(output: str) -> list[list[list[str]]]:
+    # The rows of each table, in order, its header first.
+    tables: list[list[list[str]]] = []
+    for line in output.splitlines():
+        if line.startswith("┏"):
+            tables.append([])
+        elif line.startswith(("│", "┃")):
+            tables[-1].append([cell.strip() for cell in line[1:-1].split(line[0])])
+    return tables
+
+
+def test_ledger_forecast(calendar_dir: Path, monkeypatch: Any, capsys: Any) -> None:
+    _ledger(monkeypatch, [], "--forecast", "--events", _EVENTS, "2026", "2027")
+
+    output = capsys.readouterr().out
+    # Neither sent nor paid: the 2026 paid table is left out.
+    sent, to_bill, coming, totals, *later = _tables(output)
+    assert "2026: sent" in output
+    assert [row[0] for row in sent] == ["Invoice", "2026-10-001"]
+    assert "2026: 1 invoices;" in output
+    # Date, Company, Reference, Days, Trainees, Excl. VAT, VAT, Contrib.,
+    # Income tax, Net. Billed on the day it ends, taxed after the invoices.
+    assert to_bill[1:] == [
+        [
+            *("2026-10-14", "Company_0", "", "3", "", "2070.00", "0.00"),
+            *("414", "0", "1656.00"),
+        ]
+    ]
+    assert "Over but not invoiced: invoicez gcal bill." in output
+    assert [row[:1] + row[5:] for row in coming[1:]] == [
+        ["2026-11-06", "5000.00", "0.00", "1000", "61", "3939.00"],
+        ["2026-11-26", "4000.00", "0.00", "800", "264", "2936.00"],
+        ["2026-12-11", "3000.00", "0.00", "600", "198", "2202.00"],
+        ["2026-12-18", "3000.00", "0.00", "600", "198", "2202.00"],
+    ]
+    assert totals == [
+        ["", "Days", "Trainees", "Excl. VAT", "Contrib.", "Income tax", "Net"],
+        ["Paid", "0", "0", "0.00", "0", "0", "0.00"],
+        ["Sent", "9", "6", "9000.00", "1800", "0", "7200.00"],
+        ["To bill", "3", "0", "2070.00", "414", "0", "1656.00"],
+        ["Sure", "5", "0", "5000.00", "1000", "61", "3939.00"],
+        ["Tentative", "10", "0", "10000.00", "2000", "660", "7340.00"],
+        ["Total", "27", "6", "26070.00", "5214", "721", "20135.00"],
+    ]
+    # Only tentative engagements in 2027.
+    coming_2027, totals_2027 = later
+    assert len(coming_2027) == 9
+    assert [row[0] for row in totals_2027[1:]] == [
+        *("Paid", "Sent", "Tentative", "Total"),
+    ]
+
+
+def test_ledger_forecast_csv(calendar_dir: Path, monkeypatch: Any, capsys: Any) -> None:
+    _ledger(monkeypatch, [], "--forecast", "--events", _EVENTS, "--csv")
+
+    rows = list(csv.DictReader(StringIO(capsys.readouterr().out)))
+    assert [(row["number"], row["source"], row["forecast"]) for row in rows] == [
+        ("2026-10-001", "documents", ""),
+        ("Id_355", "calendar", "to_bill"),
+        ("Id_357", "calendar", "sure"),
+        ("Id_359", "calendar", "tentative"),
+        ("Id_363", "calendar", "tentative"),
+        ("Id_364", "calendar", "tentative"),
+    ]
+
+
+def test_ledger_forecast_leaves_past_years_alone(
+    calendar_dir: Path, monkeypatch: Any, capsys: Any
+) -> None:
+    # The calendar is not even read.
+    _ledger(monkeypatch, [], "--forecast", "--events", "missing.json", "2025")
+
+    output = capsys.readouterr().out
+    assert "Total" in output
+    assert "with " not in output
+
+
+def test_forecasts_are_taxed_after_more_certain_entries() -> None:
+    from invoicez.ledger.entries import Entry
+    from invoicez.ledger.report import ledger_lines
+    from invoicez.ledger.settings import IncomeTax
+
+    def entry(day: int, forecast: Any) -> Entry:
+        return Entry(
+            number=str(day), date=date(2026, 11, day), company="C", reference=None,
+            days=1, trainees=None, principal=1000, expenses=0, vat=0, sent=None,
+            paid=None, credit_note=False, forecast=forecast,
+            source="documents" if forecast is None else "calendar",
+        )  # fmt: skip
+
+    settings = LedgerSettings(
+        income_tax=IncomeTax(allowance=0, brackets={2026: {1000: 0.1, 2000: 0.2}})
+    )
+    lines = ledger_lines(
+        [entry(1, "tentative"), entry(2, "sure"), entry(3, None)], settings
+    )
+    # Taxed invoice, sure, then tentative, but kept in order of date.
+    assert [line.entry.number for line in lines] == ["1", "2", "3"]
+    assert [line.income_tax for line in lines] == [200, 100, 0]

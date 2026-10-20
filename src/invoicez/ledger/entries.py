@@ -23,6 +23,9 @@ from invoicez.superpdp.statuses import emitted_at, paid_at
 from invoicez.variables import InvoiceLine, Variables
 
 _CREDIT_NOTE = "381"
+# Engagements of the calendar not invoiced yet: over (to bill), confirmed and to
+# come (sure), or unconfirmed (tentative).
+Forecast = Literal["to_bill", "sure", "tentative"]
 # Two invoices differing by less are taken as equal.
 _CENT = 0.005
 
@@ -42,7 +45,11 @@ class Entry(BaseModel, extra="forbid", frozen=True):
     sent: date | None
     paid: date | None
     credit_note: bool
-    source: Literal["spreadsheet", "documents"]
+    # The number of the invoice a credit note cancels, if read from the documents.
+    cancels: str | None = None
+    source: Literal["spreadsheet", "documents", "calendar"]
+    # Only for entries of the calendar, whose number is the engagement's id.
+    forecast: Forecast | None = None
 
     @property
     def amount(self) -> float:
@@ -126,7 +133,7 @@ def spreadsheet_entries(
     return entries
 
 
-def _document_entry(
+def document_entry(
     content: Mapping[str, Any],
     global_mapping: Mapping[str, Any],
     git_dir: Path,
@@ -134,6 +141,20 @@ def _document_entry(
     remote: dict[str, Any] | None,
     cancelled: Mapping[str, Any] | None,
 ) -> Entry:
+    """Read an invoice or credit note document as an entry.
+
+    Args:
+        content: The document.
+        global_mapping: The content of variables.yml.
+        git_dir: The data repository, to resolve the invoice a credit note
+            cancels.
+        settings: The ledger settings.
+        remote: The invoice as sent to SuperPDP, if it was.
+        cancelled: The document of the invoice a credit note cancels.
+
+    Returns:
+        The entry.
+    """
     variables = Variables.from_mappings(
         global_mapping, resolve_cancellation(dict(content), git_dir)
     )
@@ -178,6 +199,7 @@ def _document_entry(
         sent=sent.date() if sent else None,
         paid=paid.date() if paid else None,
         credit_note=credit_note,
+        cancels=str(content["cancels"]) if "cancels" in content else None,
         source="documents",
     )
 
@@ -254,7 +276,7 @@ def load_entries(
         # Unknown cancelled invoices are reported by resolve_cancellation.
         _, cancelled = documents.get(str(content.get("cancels")), (None, None))
         try:
-            entry = _document_entry(
+            entry = document_entry(
                 content,
                 global_mapping,
                 git_dir,
