@@ -5,7 +5,7 @@ Needs the gcal extra: pip install invoicez[gcal].
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
@@ -63,7 +63,8 @@ def _login() -> Credentials:
         )
         raise InvoicezError(msg)
     flow = InstalledAppFlow.from_client_secrets_file(str(secrets), SCOPES)
-    return flow.run_local_server(port=0)
+    # Typed for any flow, but an installed app flow always gives user credentials.
+    return cast("Credentials", flow.run_local_server(port=0))
 
 
 def credentials() -> Credentials:

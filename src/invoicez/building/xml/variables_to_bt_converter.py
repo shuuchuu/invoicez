@@ -155,11 +155,13 @@ def _add_reference(d: BT, reference: str | None, company: Company) -> None:
 
 
 def _add_seller(d: BT, seller: Seller) -> None:
-    d.update(_convert_seller(seller))
+    # SellerBT's keys are BT's, but TypedDicts are open, so update() can't know.
+    d.update(_convert_seller(seller))  # pyrefly: ignore[no-matching-overload]
 
 
 def _add_buyer(d: BT, company: Company) -> None:
-    d.update(_convert_company(company))
+    # Same as for _add_seller.
+    d.update(_convert_company(company))  # pyrefly: ignore[no-matching-overload]
 
 
 def _add_invoice_line(

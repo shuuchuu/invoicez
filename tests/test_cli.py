@@ -34,7 +34,7 @@ NS = {
 
 def _embedded_xml(pdf_path: Path) -> ElementTree.Element:
     _, xml_bytes = get_xml_from_pdf(pdf_path.read_bytes())
-    assert xml_bytes is not None
+    assert isinstance(xml_bytes, bytes)
     return ElementTree.fromstring(xml_bytes)
 
 

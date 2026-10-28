@@ -27,7 +27,7 @@ def _open_url_windows(url: str, locate: bool) -> int:
             return 127
     else:
         try:
-            os.startfile(url)  # ty: ignore[unresolved-attribute]
+            os.startfile(url)  # pyrefly: ignore[missing-attribute]
         except OSError:
             return 127
         return 0

@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from datetime import date
 from os.path import join as path_join
 from pathlib import Path
@@ -5,6 +6,10 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from invoicez.exceptions import InvoicezError
+
+
+def _path_join(paths: Iterable[str]) -> str:
+    return path_join(*paths)  # ruff: ignore[os-path-join]
 
 
 def _to_camel_case(string: str) -> str:
@@ -40,7 +45,7 @@ def create_environment(jinja2_dir: Path) -> Environment:
         autoescape=False,
     )
     environment.filters["camelcase"] = _to_camel_case
-    environment.filters["path_join"] = lambda paths: path_join(*paths)  # ruff: ignore[os-path-join]
+    environment.filters["path_join"] = _path_join
     environment.filters["display_number"] = _to_int_or_float
     environment.filters["display_date_range"] = _display_date_range
     return environment
