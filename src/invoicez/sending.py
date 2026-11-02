@@ -33,7 +33,7 @@ STATUS_WAIT_SECONDS = 10.0
 STATUS_POLL_SECONDS = 1.0
 
 
-def _confirm(prompt: str) -> bool:
+def confirm(prompt: str) -> bool:
     try:
         return input(prompt).strip().casefold().startswith("y")
     except EOFError:
@@ -144,7 +144,7 @@ def send_document(
     global_data = safe_load(paths.variables.read_text(encoding="utf8"))
     relative_pdf_path = pdf_path.relative_to(paths.git_dir)
     _preview(console, Variables.from_mappings(global_data, data), relative_pdf_path)
-    if not yes and not _confirm("Send it? [y]es, [n]o: "):
+    if not yes and not confirm("Send it? [y]es, [n]o: "):
         console.print(f"Not sent, left in {relative_pdf_path}", highlight=False)
         return "skipped"
 

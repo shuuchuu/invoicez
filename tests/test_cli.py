@@ -555,6 +555,103 @@ def test_status_ignores_problems_of_invoices_cancelled_by_credit_note(
     assert "2020-10-002" not in capsys.readouterr().out
 
 
+@fixture
+def paying(monkeypatch: Any) -> dict[str, Any]:
+    """Stand in for SuperPDP, and for the user confirming, when reporting payments.
+
+    Returns:
+        The state of the fake: "sent" lists the invoices SuperPDP has, "answer"
+        is the reply to the confirmation, and "paid" lists the SuperPDP ids of
+        the invoices reported as paid.
+    """
+    from invoicez.cli import paid
+
+    state: dict[str, Any] = {"sent": [], "answer": "y", "paid": []}
+
+    def mark_paid(invoice_id: int) -> dict[str, Any]:
+        state["paid"].append(invoice_id)
+        return _event("fr:212", "Encaissée")
+
+    monkeypatch.setattr(paid, "list_sent_invoices", lambda: state["sent"])
+    monkeypatch.setattr(paid, "mark_paid", mark_paid)
+    monkeypatch.setattr("builtins.input", lambda _: state["answer"])
+    return state
+
+
+def _sent_with_id(id_: int, number: str, *codes: str) -> dict[str, Any]:
+    return {**_sent(number, "2020-10-07", *codes), "id": id_}
+
+
+def test_paid_reports_invoices_once_confirmed(
+    working_dir: Path, paying: dict[str, Any], capsys: Any
+) -> None:
+    from invoicez.cli.paid import paid
+
+    paying["sent"] = [
+        _sent_with_id(7, "2020-10-001", "fr:203"),
+        _sent_with_id(8, "2020-10-002", "fr:203", "fr:212"),
+    ]
+    paid("2020-10-001", "company1/2020-10-001-Company.yml", "2020-10-002")
+
+    # Given twice, reported once; already paid, skipped.
+    assert paying["paid"] == [7]
+    output = capsys.readouterr().out
+    assert "2020-10-002 is already paid, skipped" in output
+    assert "2020-10-001: Encaissée (fr:212)" in output
+
+
+def test_paid_not_confirmed_reports_nothing(
+    working_dir: Path, paying: dict[str, Any]
+) -> None:
+    from invoicez.cli.paid import paid
+
+    paying["sent"] = [_sent_with_id(7, "2020-10-001", "fr:203")]
+    paying["answer"] = "n"
+    paid("2020-10-001")
+
+    assert paying["paid"] == []
+
+
+def test_paid_yes_does_not_ask(
+    working_dir: Path, paying: dict[str, Any], monkeypatch: Any
+) -> None:
+    from invoicez.cli.paid import paid
+
+    paying["sent"] = [_sent_with_id(7, "2020-10-001", "fr:203")]
+    monkeypatch.setattr("builtins.input", lambda _: fail("asked"))
+    paid("2020-10-001", yes=True)
+
+    assert paying["paid"] == [7]
+
+
+@mark.parametrize(
+    ("codes", "number", "message"),
+    [
+        ((), "2020-10-001", "2020-10-001 was not sent through SuperPDP"),
+        (("api:invalid",), "2020-10-001", "2020-10-001 was not sent through"),
+        (("fr:203", "fr:220"), "2020-10-001", "2020-10-001 is cancelled on SuperPDP"),
+        (("fr:203",), "2020-10-003", "2020-10-003 is a credit note"),
+    ],
+)
+def test_paid_checks_every_invoice_before_reporting(
+    working_dir: Path,
+    paying: dict[str, Any],
+    codes: tuple[str, ...],
+    number: str,
+    message: str,
+) -> None:
+    from invoicez.cli.paid import paid
+
+    # A valid invoice given first is not reported either.
+    paying["sent"] = [_sent_with_id(8, "2020-10-002", "fr:203")]
+    if codes:
+        paying["sent"].append(_sent_with_id(7, number, *codes))
+    with raises(InvoicezError, match=message):
+        paid("2020-10-002", number)
+
+    assert paying["paid"] == []
+
+
 def test_complete_documents(working_dir: Path, capsys: Any) -> None:
     from invoicez.cli import main
 
@@ -580,7 +677,7 @@ def test_zsh_completion_offers_documents() -> None:
     script = app.generate_completion(shell="zsh", prog_name="invoicez")
 
     assert script.startswith("#compdef invoicez\n\n_invoicez_documents() {")
-    assert script.count(":_invoicez_documents'") == 6
+    assert script.count(":_invoicez_documents'") == 7
     assert "complete-documents" not in script.split("_invoicez_documents() {")[2:]
     if zsh := which("zsh"):
         check = run([zsh, "-n"], input=script, text=True, check=False)

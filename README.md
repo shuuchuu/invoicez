@@ -160,6 +160,12 @@ the record of what was sent.
   delivered?`), those not sent yet, and those awaiting payment. Invoices dated before the first one SuperPDP has are taken
   as sent before it. Invoices cancelled by a credit note are left out. Exits
   with 1 on a problem.
+- `invoicez paid DOCUMENT... [--yes]`: reports invoices sent via SuperPDP as
+  paid in full today (`fr:212`, Encaissée), once confirmed. Reporting payments
+  is the seller's job: buyers' platforms do not. Every invoice is checked
+  before any is reported: credit notes, invoices SuperPDP does not have or
+  found invalid, and cancelled ones are refused; those already paid are
+  skipped. `--yes` reports without asking.
 
 Expired or revoked SuperPDP tokens are renewed on the fly.
 
@@ -216,7 +222,7 @@ ledger:
 ### Shell completion
 
 `invoicez --install-completion` installs shell completion. With zsh, it also
-completes invoice numbers for `run`, `send` and `cancel`.
+completes invoice numbers for `run`, `send`, `cancel` and `paid`.
 
 ## Usage
 

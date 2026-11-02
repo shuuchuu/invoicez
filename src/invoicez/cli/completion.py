@@ -8,8 +8,8 @@ _FIELD_RE = re.compile(
     re.MULTILINE,
 )
 
-# The commands whose DOCUMENT argument takes an invoice number.
-_DOCUMENT_COMMANDS = ("run", "send", "cancel")
+# The commands whose DOCUMENT argument(s) take invoice numbers.
+_DOCUMENT_COMMANDS = ("run", "send", "cancel", "paid")
 
 _ZSH_FUNCTION = """
 _{prog}_documents() {{
@@ -47,13 +47,14 @@ def add_document_completion(script: str, prog: str) -> str:
         prog: Name of the program.
 
     Returns:
-        The script, with the DOCUMENT argument of run, send and cancel completed by
-        a function calling the complete-documents command.
+        The script, with the DOCUMENT argument(s) of run, send, cancel and paid
+        completed by a function calling the complete-documents command.
     """
     action = f"_{prog}_documents"
 
     def complete_block(match: re.Match[str]) -> str:
-        block = re.sub(r"('1:[^']*)'", rf"\1:{action}'", match[0], count=1)
+        # The first positional argument, or all of them if variadic.
+        block = re.sub(r"('[1*]:[^']*)'", rf"\1:{action}'", match[0], count=1)
         return re.sub(r"(--document\[[^']*\]:document)'", rf"\1:{action}'", block)
 
     commands = "|".join(_DOCUMENT_COMMANDS)

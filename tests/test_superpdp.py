@@ -70,6 +70,15 @@ def test_send_invoice_returns_created_invoice(api: _Api) -> None:
     assert invoices.send_invoice(PDF.read_bytes()) == created
 
 
+def test_mark_paid_creates_a_payment_received_event(api: _Api) -> None:
+    created = {"id": 3, "invoice_id": 42, "status_code": "fr:212"}
+    api.replies.append(_response(200, created))
+
+    assert invoices.mark_paid(42) == created
+    # Without details, SuperPDP reports the invoice total as received.
+    assert api.calls[0]["json"] == {"invoice_id": 42, "status_code": "fr:212"}
+
+
 def test_send_invoice_raises_with_api_message(api: _Api) -> None:
     api.replies.append(
         _response(400, {"http_status_code": 400, "message": "invalid buyer"})

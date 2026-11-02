@@ -6,6 +6,7 @@ from facturx import get_xml_from_pdf
 from invoicez.exceptions import InvoicezError
 from invoicez.superpdp.auth import Token, get_access_token
 from invoicez.superpdp.config import ENDPOINT
+from invoicez.superpdp.statuses import PAID
 
 API_BASE = f"{ENDPOINT}/v1.beta"
 
@@ -126,6 +127,26 @@ def get_invoice(invoice_id: int) -> dict:
         The invoice.
     """
     return _request("GET", f"/invoices/{invoice_id}", "Fetching the invoice")
+
+
+def mark_paid(invoice_id: int) -> dict:
+    """Report a sent invoice as paid in full (fr:212, Encaissée), as of now.
+
+    The seller reports this status: the buyer's platform does not. Without
+    details, SuperPDP reports the total of the invoice as received.
+
+    Args:
+        invoice_id: SuperPDP id of the invoice.
+
+    Returns:
+        The event created, queued by SuperPDP to be sent on.
+    """
+    return _request(
+        "POST",
+        "/invoice_events",
+        "Marking the invoice as paid",
+        json={"invoice_id": invoice_id, "status_code": PAID},
+    )
 
 
 def send_invoice(pdf_bytes: bytes, *, external_id: str | None = None) -> dict:
