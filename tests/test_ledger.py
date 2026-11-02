@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from pytest import approx, fixture, raises
 from yaml import safe_dump, safe_load
 
+from invoicez.exceptions import InvoicezError
 from invoicez.ledger.settings import LedgerSettings
 from invoicez.ledger.spreadsheet import read_sheets
 from invoicez.ledger.taxes import contribution_rate, income_tax, to_euros
@@ -457,3 +458,141 @@ def test_forecasts_are_taxed_after_more_certain_entries() -> None:
     # Taxed invoice, sure, then tentative, but kept in order of date.
     assert [line.entry.number for line in lines] == ["1", "2", "3"]
     assert [line.income_tax for line in lines] == [200, 100, 0]
+
+
+def _paid(number: str, paid: date | None, amount: float, **kwargs: Any) -> Any:
+    from invoicez.ledger.entries import Entry
+
+    return Entry(
+        number=number, date=date(2026, 9, 1), company="C", reference=None, days=1,
+        trainees=None, principal=amount, expenses=0, vat=round(amount * 0.2, 2),
+        sent=None, paid=paid, credit_note=amount < 0, source="documents", **kwargs,
+    )  # fmt: skip
+
+
+def test_dues_owe_on_payments_not_declared_yet() -> None:
+    from invoicez.ledger.declarations import dues
+    from invoicez.ledger.settings import Declaration, Declarations
+
+    entries = [
+        # Declared already.
+        _paid("1", date(2026, 9, 30), 1000),
+        _paid("2", date(2026, 10, 1), 1500.5),
+        _paid("3", date(2026, 10, 31), 500),
+        _paid("4", date(2026, 11, 2), 2000),
+        _paid("5", None, 3000),
+    ]
+    declarations = Declarations(
+        urssaf=Declaration(declared_through=date(2026, 9, 30)),
+        vat=Declaration(declared_through=date(2026, 9, 30), due_day=19),
+    )
+    rates = {date(2026, 1, 1): 0.25, date(2026, 11, 1): 0.3}
+    rows, warnings = dues(entries, declarations, rates, date(2026, 11, 2))
+
+    assert warnings == []
+    assert [
+        (row.tax, f"{row.start:%m}", str(row.deadline), row.invoices, row.collected,
+         row.owed, row.in_progress)
+        for row in rows
+    ] == [
+        ("urssaf", "10", "2026-11-30", ("2", "3"), 2000.5, 500, False),
+        # At the rate in force on the day of the payment.
+        ("urssaf", "11", "2026-12-31", ("4",), 2000, 600, True),
+        ("vat", "10", "2026-11-19", ("2", "3"), 2000.5, 400, False),
+        ("vat", "11", "2026-12-19", ("4",), 2000, 400, True),
+    ]  # fmt: skip
+
+
+def test_dues_by_quarter_and_without_rate() -> None:
+    from invoicez.ledger.declarations import dues
+    from invoicez.ledger.settings import Declaration, Declarations
+
+    declarations = Declarations(
+        urssaf=Declaration(period="quarterly", declared_through=date(2026, 6, 30))
+    )
+    rows, warnings = dues(
+        [_paid("1", date(2026, 8, 3), 1000), _paid("2", date(2026, 11, 2), 1000)],
+        declarations,
+        {},
+        date(2026, 11, 2),
+    )
+
+    assert [(str(row.start), str(row.end), row.owed) for row in rows] == [
+        ("2026-07-01", "2026-09-30", None),
+        ("2026-10-01", "2026-12-31", None),
+    ]
+    assert warnings == [
+        "No contribution rate for the payments of 2026-07",
+        "No contribution rate for the payments of 2026-10",
+    ]
+
+
+def test_dues_warn_about_credit_notes_of_payments_not_declared() -> None:
+    from invoicez.ledger.declarations import dues
+    from invoicez.ledger.settings import Declaration, Declarations
+
+    entries = [
+        _paid("1", date(2026, 9, 3), 1000),
+        _paid("2", date(2026, 10, 3), 1000),
+        _paid("3", None, -1000, cancels="1"),
+        _paid("4", None, -1000, cancels="2"),
+    ]
+    declarations = Declarations(vat=Declaration(declared_through=date(2026, 9, 30)))
+    _, warnings = dues(entries, declarations, {}, date(2026, 10, 5))
+
+    assert warnings == ["4 cancels 2, paid on 2026-10-03: deduct any refund by hand"]
+
+
+def test_declared_through_ends_a_period() -> None:
+    from invoicez.ledger.settings import Declaration
+
+    Declaration(period="quarterly", declared_through=date(2026, 12, 31))
+    with raises(ValidationError, match="last day of a monthly period"):
+        Declaration(declared_through=date(2026, 10, 30))
+    with raises(ValidationError, match="last day of a quarterly period"):
+        Declaration(period="quarterly", declared_through=date(2026, 10, 31))
+
+
+def test_due(working_dir: Path, monkeypatch: Any, capsys: Any) -> None:
+    from invoicez.cli import due, main
+
+    with (working_dir / "settings.yml").open("a", encoding="utf8") as settings:
+        settings.write(
+            "  declarations:\n"
+            "    urssaf: {declared_through: 2020-10-31}\n"
+            "    vat: {declared_through: 2020-10-31, due_day: 19}\n"
+        )
+    monkeypatch.setenv("COLUMNS", "250")
+    monkeypatch.setattr(due, "list_sent_invoices", lambda: _SENT)
+    monkeypatch.setattr(due, "_today", lambda: date(2020, 12, 5))
+    with raises(SystemExit) as exit_info:
+        main("due")
+    assert not exit_info.value.code
+
+    output = capsys.readouterr().out
+    rows = [
+        [cell.strip() for cell in line.split("│")[1:-1]]
+        for line in output.splitlines()
+        if line.startswith("│")
+    ]
+    # Period, Due by, Invoices paid, Collected excl. VAT, Owed: 2020-10-001,
+    # paid on 2020-11-02 from the spreadsheet (1800, no VAT), and 2020-10-002
+    # on 2020-11-20 from SuperPDP (1620, 324 of VAT).
+    assert rows == [
+        ["2020-11", "2020-12-31", "2020-10-001", "3420.00", "684"],
+        ["", "", "2020-10-002", "", ""],
+        ["2020-12", "2021-01-31", "", "0.00", "0"],
+        ["Total", "", "", "3420.00", "684"],
+        ["2020-11", "2020-12-19", "2020-10-001", "3420.00", "324"],
+        ["", "", "2020-10-002", "", ""],
+        ["2020-12", "2021-01-19", "", "0.00", "0"],
+        ["Total", "", "", "3420.00", "324"],
+    ]
+    assert "2020-10-003 cancels 2020-10-002, paid on 2020-11-20" in output
+
+
+def test_due_needs_declarations(working_dir: Path) -> None:
+    from invoicez.cli.due import due
+
+    with raises(InvoicezError, match=r"Configure ledger\.declarations"):
+        due()

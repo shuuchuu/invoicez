@@ -219,6 +219,35 @@ ledger:
       2025: {11600: 0.11, 29579: 0.30, 84577: 0.41, 181917: 0.45}
 ```
 
+### Declarations
+
+`invoicez due` shows what the payments received but not declared yet owe, in
+a table per tax with a row per period: its deadline, the invoices paid during
+it, what they bring excluding VAT, and what is owed. It lists every period after
+the last one declared, up to the one in progress, which is dimmed.
+
+- Social contributions (`urssaf`) are owed on what was received excluding VAT,
+  at the rate of `contribution_rates` in force on the day of each payment.
+- VAT (`vat`) is the VAT of the invoices paid during the period, as VAT on
+  services is due once paid. Purchases are not deducted.
+
+Payments are dated by the spreadsheet before the pivot date, and by their
+`fr:212` event after it: report them with `invoicez paid` the day they come in.
+Credit notes have no payment date: one cancelling an invoice paid in a period
+not declared yet is reported, to deduct any refund by hand.
+
+```yaml
+ledger:
+  declarations:
+    urssaf:
+      period: monthly  # or quarterly
+      declared_through: 2026-10-31  # move on once a period is declared
+    vat:
+      period: monthly
+      declared_through: 2026-10-31
+      due_day: 15  # of the month after the period; the last day by default
+```
+
 ### Shell completion
 
 `invoicez --install-completion` installs shell completion. With zsh, it also
