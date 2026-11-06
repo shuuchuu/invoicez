@@ -3,7 +3,7 @@
 from collections import Counter
 from collections.abc import Mapping
 from datetime import date, timedelta
-from typing import Any
+from typing import Any, Literal
 
 from jinja2 import Environment, StrictUndefined, TemplateError
 from pydantic import BaseModel
@@ -17,6 +17,8 @@ from invoicez.variables import InvoiceLine
 
 # Plain text: lines end up in YAML, then LaTeX-escaped when building the PDF.
 _ENVIRONMENT = Environment(undefined=StrictUndefined, autoescape=False)
+# UN/ECE Rec 20 code of a lump sum, as BT-130 requires (BR-CL-23).
+_LUMP_SUM_UNIT = "LS"
 
 
 class Pricing(BaseModel, extra="forbid", frozen=True):
@@ -27,6 +29,12 @@ class Pricing(BaseModel, extra="forbid", frozen=True):
     # Training days, half-days counting 0.5, preparation days excluded.
     days: float
     lines: tuple[InvoiceLine, ...]
+
+
+class Expenses(BaseModel, extra="forbid", frozen=True):
+    billing: Literal["day", "lump_sum"]
+    # Per day, or for the whole engagement, depending on billing.
+    amount: float
 
 
 class FrenchNumber(float):
@@ -170,3 +178,46 @@ def price(
     return Pricing(
         company=company, training=training, rate=rate, days=total, lines=tuple(lines)
     ), []
+
+
+def with_expenses(
+    pricing: Pricing,
+    engagement: Engagement,
+    expenses: Expenses,
+    settings: GcalSettings,
+) -> Pricing:
+    """Add a line for the expenses of an engagement to its pricing.
+
+    Expenses billed per day span the training days. A lump sum also covers the
+    day before, when the trainer travels.
+
+    Returns:
+        The pricing with the expenses as its last line.
+    """
+    if expenses.billing == "day":
+        start = engagement.start
+        n = pricing.days
+        unit = settings.unit
+        template = settings.templates.expenses_day_line
+    else:
+        start = engagement.start - timedelta(days=1)
+        n = 1
+        unit = _LUMP_SUM_UNIT
+        template = settings.templates.expenses_lump_sum_line
+    line = InvoiceLine(
+        start=start,
+        end=engagement.end,
+        n=n,
+        pu=expenses.amount,
+        unit=unit,
+        description=render_template(
+            template,
+            company=pricing.company,
+            training=pricing.training,
+            days=number(pricing.days),
+            start=start,
+            end=engagement.end,
+            n=number(n),
+        ),
+    )
+    return pricing.model_copy(update={"lines": (*pricing.lines, line)})

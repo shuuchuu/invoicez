@@ -24,6 +24,8 @@ def settings(gcal_settings: GcalSettings) -> GcalSettings:
                 "day_line": "Journée {{ training.name }} ({{ n }})",
                 "half_day_line": "Journée {{ training.name }}, demi ({{ n }})",
                 "preparation_line": "Préparation {{ training.name }} ({{ n }})",
+                "expenses_day_line": "Frais {{ company }} ({{ n }})",
+                "expenses_lump_sum_line": "Forfait {{ training.name }}",
             },
             "rates": {"t2": {"day": 690, "preparation_day": 500}, "t1": {"day": 590}},
             "trainings": {

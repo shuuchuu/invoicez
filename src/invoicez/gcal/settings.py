@@ -55,6 +55,8 @@ class Templates(BaseModel, extra="forbid", frozen=True):
     day_line: str
     half_day_line: str
     preparation_line: str
+    expenses_day_line: str
+    expenses_lump_sum_line: str
 
 
 class GcalSettings(BaseModel, extra="forbid", frozen=True):

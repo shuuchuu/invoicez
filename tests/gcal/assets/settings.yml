@@ -32,6 +32,8 @@ gcal:
     day_line: "Journée de formation"
     half_day_line: "Journée de formation"
     preparation_line: "Journée de préparation"
+    expenses_day_line: "Forfait journalier ({{ n }} jours)"
+    expenses_lump_sum_line: "Forfait {{ training.name }}"
   rates:
     fixture:
       day: 1000

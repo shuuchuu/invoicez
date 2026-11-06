@@ -287,7 +287,7 @@ def migrate_gcal_settings(old: dict[str, Any]) -> tuple[dict[str, Any], list[str
     )
     warnings.append(
         "templates: to fill, as Jinja strings for the document description and "
-        "the day, half-day and preparation lines."
+        "the day, half-day, preparation and expenses lines."
     )
     return {
         "start_date": _TODO,
@@ -297,6 +297,8 @@ def migrate_gcal_settings(old: dict[str, Any]) -> tuple[dict[str, Any], list[str
             "day_line": _TODO,
             "half_day_line": _TODO,
             "preparation_line": _TODO,
+            "expenses_day_line": _TODO,
+            "expenses_lump_sum_line": _TODO,
         },
         "rates": rates,
         "trainings": trainings,

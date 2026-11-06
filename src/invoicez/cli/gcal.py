@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from datetime import date
+from math import inf
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -26,6 +27,7 @@ from invoicez.gcal.loading import (
     load_events,
     load_gcal,
 )
+from invoicez.gcal.pricing import Expenses, Pricing, with_expenses
 from invoicez.gcal.reconcile import State, scan_documents
 from invoicez.numbering import get_next_document_number
 from invoicez.paths import Paths
@@ -304,6 +306,79 @@ def _ask_trainees(
         console.print(f"[bold red]error[/]: {answer!r} is not a number of trainees")
 
 
+def _ask_choice(
+    console: Console, prompt: str, choices: str, default: str | None = None
+) -> str:
+    # The first letter of an answer among choices, default if it is empty.
+    while True:
+        answer = _ask(prompt).strip().casefold()
+        if not answer and default is not None:
+            return default
+        if answer and answer[0] in choices:
+            return answer[0]
+        console.print(f"[bold red]error[/]: {answer!r} is not one of the choices")
+
+
+def _ask_amount(console: Console, prompt: str) -> float | Literal["quit"]:
+    # A positive amount, with a point or a French comma, or "quit".
+    while True:
+        answer = _ask(prompt).strip()
+        if answer.casefold().startswith("q"):
+            return "quit"
+        try:
+            amount = float(answer.replace(",", "."))
+        except ValueError:
+            amount = 0.0
+        if 0 < amount < inf:
+            return amount
+        console.print(f"[bold red]error[/]: {answer!r} is not a positive amount")
+
+
+def _ask_expenses(
+    console: Console, status: EngagementStatus
+) -> Expenses | Literal["quit"] | None:
+    # The expenses to bill, None if there are none, or "quit".
+    e = status.engagement
+    answer = _ask_choice(
+        console,
+        f"Expenses for {e.root.title!r} ({e.start} → {e.end})? [y]es, [N]o, [q]uit: ",
+        "ynq",
+        default="n",
+    )
+    if answer != "y":
+        return "quit" if answer == "q" else None
+    answer = _ask_choice(
+        console, "Billed per [d]ay, or as a [l]ump sum for all days, [q]uit: ", "dlq"
+    )
+    if answer == "q":
+        return "quit"
+    per_day = answer == "d"
+    amount = _ask_amount(
+        console, f"Amount {'per day' if per_day else 'for all days'}, [q]uit: "
+    )
+    if amount == "quit":
+        return "quit"
+    return Expenses(billing="day" if per_day else "lump_sum", amount=amount)
+
+
+def _ask_details(
+    console: Console, status: EngagementStatus, pricing: Pricing, context: GcalContext
+) -> tuple[int | None, Pricing] | Literal["quit"]:
+    # The trainees and the pricing with its expenses, or "quit".
+    trainees = status.engagement.description.trainees
+    if trainees is None:
+        answer = _ask_trainees(console, status)
+        if answer == "quit":
+            return "quit"
+        trainees = answer
+    expenses = _ask_expenses(console, status)
+    if expenses == "quit":
+        return "quit"
+    if expenses is not None:
+        pricing = with_expenses(pricing, status.engagement, expenses, context.gcal)
+    return trainees, pricing
+
+
 def _bill_one(
     console: Console,
     status: EngagementStatus,
@@ -325,16 +400,14 @@ def _bill_one(
     )
     if not reference:
         return "skipped", None
-    trainees = e.description.trainees
-    if trainees is None:
-        answer = _ask_trainees(console, status)
-        if answer == "quit":
-            return "quit", None
-        trainees = answer
+    details = _ask_details(console, status, status.pricing, context)
+    if details == "quit":
+        return "quit", None
+    trainees, pricing = details
     try:
         document = draft(
             e,
-            status.pricing,
+            pricing,
             document_number=get_next_document_number(paths.git_dir, today=today),
             today=today,
             reference=reference,
@@ -380,8 +453,9 @@ def bill(
 ) -> int:
     """Draft invoices for engagements that are over, one at a time.
 
-    Each draft is previewed and written only once confirmed; its number is the
-    next free one at that moment.
+    Asks for what the calendar does not hold: the reference, the trainees and
+    the expenses, billed per day or as a lump sum. Each draft is previewed and
+    written only once confirmed; its number is the next free one at that moment.
 
     Args:
         ids: Engagements to bill (the Id column of status). Defaults to every

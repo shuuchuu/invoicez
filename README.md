@@ -86,6 +86,8 @@ gcal:
     day_line: Journée de formation
     half_day_line: Journée de formation
     preparation_line: Journée de préparation
+    expenses_day_line: Forfait de frais de déplacement journalier
+    expenses_lump_sum_line: Forfait de frais de déplacement
   rates:
     standard: {day: 740, preparation_day: 500}
   trainings:  # company key of variables.yml -> training in titles -> training
@@ -122,7 +124,10 @@ the French way in templates (`2,5`). Documents hold LaTeX, so `&`, `%`, `$`,
   with 1 on an error.
 - `invoicez gcal bill [ID...] [--rebill] [--build] [--send]`: drafts the
   unbilled engagements one at a time, after a preview and a confirmation;
-  numbers are taken at confirmation. `--build` also builds the PDF and XML in
+  numbers are taken at confirmation. It asks whether there are expenses, then
+  whether they are billed per day (a `DAY` line over the training days) or as a
+  lump sum for all days (an `LS` line starting the day before, for the travel),
+  and their amount. `--build` also builds the PDF and XML in
   `sendbox/`, `--send` sends each invoice written, as `invoicez send` does.
 - `invoicez gcal link [--write] [--pair ID=NUMBER...]`: links invoices made
   before by hand to their engagements, by the days they bill, so that

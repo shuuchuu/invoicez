@@ -28,6 +28,8 @@ def gcal_mapping() -> dict[str, Any]:
             "day_line": "Journée de formation",
             "half_day_line": "Demi-journée de formation",
             "preparation_line": "Journée de préparation",
+            "expenses_day_line": "Forfait journalier",
+            "expenses_lump_sum_line": "Forfait",
         },
         "rates": {"default": {"day": 690, "preparation_day": 500}, "t1": {"day": 590}},
         "trainings": {
