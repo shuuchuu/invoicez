@@ -555,8 +555,8 @@ requires-dist = [
     { name = "platformdirs", specifier = ">=4" },
     { name = "pydantic", specifier = ">=2.13" },
     { name = "pyyaml", specifier = ">=6" },
-    { name = "schedz", editable = "../schedz" },
-    { name = "schedz", extras = ["google"], marker = "extra == 'gcal'", editable = "../schedz" },
+    { name = "schedz", specifier = ">=0.1" },
+    { name = "schedz", extras = ["google"], marker = "extra == 'gcal'", specifier = ">=0.1" },
 ]
 provides-extras = ["gcal"]
 
@@ -1282,40 +1282,21 @@ wheels = [
 [[package]]
 name = "schedz"
 version = "0.1.0"
-source = { editable = "../schedz" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "platformdirs" },
     { name = "pydantic" },
     { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/22/a6/a2bc15b4c4df0e2aafbe80ec3d59bd0a5bcb724fbce0c0b4db58ab7eb821/schedz-0.1.0.tar.gz", hash = "sha256:03fda65b47c1f5deceafe3931b2e05d86e1792a70b07330a120e46b7a486892c", size = 15033, upload-time = "2026-11-08T08:25:20.461Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/8e/c3eb5236e3e3e22ecdcfb933cf87073421398a65af58c58cca0d74994491/schedz-0.1.0-py3-none-any.whl", hash = "sha256:15581c5fc3c99b83db61114dcbb25628ff04648085d4d1933283a8e3d98746f0", size = 16887, upload-time = "2026-11-08T08:25:19.106Z" },
 ]
 
 [package.optional-dependencies]
 google = [
     { name = "google-api-python-client" },
     { name = "google-auth-oauthlib" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "google-api-python-client", marker = "extra == 'google'", specifier = ">=2" },
-    { name = "google-auth-oauthlib", marker = "extra == 'google'", specifier = ">=1" },
-    { name = "platformdirs", specifier = ">=4" },
-    { name = "pydantic", specifier = ">=2.13" },
-    { name = "pyyaml", specifier = ">=6" },
-]
-provides-extras = ["google"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "bumpver", specifier = ">=2026.1132" },
-    { name = "doit", specifier = ">=0.37" },
-    { name = "google-api-python-client", specifier = ">=2" },
-    { name = "google-auth-oauthlib", specifier = ">=1" },
-    { name = "prek", specifier = ">=0.5.7" },
-    { name = "pyrefly", specifier = ">=1.4" },
-    { name = "pytest", specifier = ">=9" },
-    { name = "ruff", specifier = ">=0.17" },
-    { name = "types-pyyaml", specifier = ">=6" },
 ]
 
 [[package]]

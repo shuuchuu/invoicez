@@ -46,10 +46,6 @@ gcal = [
   "schedz[google] >= 0.1",
 ]
 
-# Until schedz is on PyPI: its checkout next to this one.
-[tool.uv.sources]
-schedz = { path = "../schedz", editable = true }
-
 [tool.ruff]
 target-version = "py313"
 
