@@ -1,19 +1,23 @@
 """Load the settings and the calendar, and analyse them: shared by the gcal commands."""
 
-import json
 from collections.abc import Mapping, Sequence
 from datetime import date
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+from platformdirs import user_config_path
 from pydantic import BaseModel, ValidationError
+from schedz import app_name as schedz_app_name
+from schedz.diagnostics import Diagnostic
+from schedz.grouping import Engagement, group_sessions
+from schedz.loading import google_api as schedz_google_api
+from schedz.loading import read_events_file
+from schedz.parsing import parse_events
 from yaml import safe_load
 
+from invoicez import app_name
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.diagnostics import Diagnostic
-from invoicez.gcal.grouping import Engagement, group_sessions
-from invoicez.gcal.parsing import parse_events
 from invoicez.gcal.pricing import Pricing, price
 from invoicez.gcal.reconcile import (
     Classification,
@@ -81,21 +85,34 @@ def load_gcal(settings_path: Path, variables_path: Path) -> GcalContext:
     )
 
 
+GCAL_EXTRA_HINT = "pip install invoicez[gcal]"
+
+# Where invoicez kept the Google OAuth files before schedz read the calendar.
+_LEGACY_FILES = {
+    "gcal-client-secrets.json": "client-secrets.json",
+    "gcal-token.json": "token.json",
+}
+
+
+def _move_legacy_credentials() -> None:
+    # Once: schedz keeps them in its own config directory, shared with deckz.
+    old_dir, new_dir = user_config_path(app_name), user_config_path(schedz_app_name)
+    for old_name, new_name in _LEGACY_FILES.items():
+        old, new = old_dir / old_name, new_dir / new_name
+        if old.is_file() and not new.exists():
+            new_dir.mkdir(parents=True, exist_ok=True)
+            old.rename(new)
+
+
 def google_api() -> ModuleType:
-    """Import the Google adapter, which needs the gcal extra.
+    """Import schedz's Google adapter, which needs the gcal extra.
 
     Returns:
-        The invoicez.gcal.google module.
-
-    Raises:
-        InvoicezError: If the gcal extra is not installed.
+        The schedz.google module. schedz raises SchedzError if the gcal extra
+        is not installed.
     """
-    try:
-        from invoicez.gcal import google
-    except ImportError as e:
-        msg = "Google Calendar access needs the gcal extra: pip install invoicez[gcal]"
-        raise InvoicezError(msg) from e
-    return google
+    _move_legacy_credentials()
+    return schedz_google_api(GCAL_EXTRA_HINT)
 
 
 def load_events(
@@ -111,18 +128,14 @@ def load_events(
             Calendar, e.g. the test fixture.
 
     Returns:
-        The raw API events.
+        The raw API events. schedz raises SchedzError if the file is not a
+        JSON list, or if the gcal extra is not installed.
 
     Raises:
-        InvoicezError: If the file is not a JSON list, the calendar id is not
-            set, or the gcal extra is not installed.
+        InvoicezError: If the calendar id is not set.
     """
     if events_file is not None:
-        events = json.loads(events_file.read_text(encoding="utf8"))
-        if not isinstance(events, list):
-            msg = f"{events_file} must hold a JSON list of events"
-            raise InvoicezError(msg)
-        return events
+        return read_events_file(events_file)
     if gcal.calendar_id is None:
         msg = (
             "gcal.calendar_id is not set in settings.yml: run "

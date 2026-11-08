@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, ValidationError
+from schedz.grouping import Engagement
 from yaml import YAMLError, safe_load
 
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.grouping import Engagement
 from invoicez.variables import GcalSource
 
 State = Literal[

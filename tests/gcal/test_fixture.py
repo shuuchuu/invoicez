@@ -1,7 +1,9 @@
 from typing import Any
 
+from schedz.settings import compile_title_pattern
+
 from invoicez.gcal.anonymize import select_fixture_events
-from invoicez.gcal.settings import GcalSettings, compile_title_pattern
+from invoicez.gcal.settings import GcalSettings
 
 
 def test_fixture_is_already_selected(

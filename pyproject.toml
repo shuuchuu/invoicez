@@ -13,6 +13,7 @@ dependencies = [
   "platformdirs >= 4",
   "pydantic >= 2.13",
   "pyyaml >= 6",
+  "schedz >= 0.1",
 ]
 description = "Tool to handle invoices."
 homepage = "https://codeberg.org/shuuchuu/invoicez"
@@ -42,9 +43,12 @@ invoicez = "invoicez.cli:main"
 
 [project.optional-dependencies]
 gcal = [
-  "google-api-python-client >= 2",
-  "google-auth-oauthlib >= 1",
+  "schedz[google] >= 0.1",
 ]
+
+# Until schedz is on PyPI: its checkout next to this one.
+[tool.uv.sources]
+schedz = { path = "../schedz", editable = true }
 
 [tool.ruff]
 target-version = "py313"

@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
+from schedz.grouping import Engagement
 
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.grouping import Engagement
 from invoicez.gcal.pricing import Pricing, number, render_template
 from invoicez.gcal.settings import GcalSettings
 from invoicez.naming import name_document

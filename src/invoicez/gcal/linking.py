@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel
+from schedz.grouping import Engagement
 from yaml import safe_dump, safe_load
 
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.grouping import Engagement
 from invoicez.gcal.reconcile import iter_invoices
 
 # Dated preparation lines are not training days (e.g. 2021-10-002).

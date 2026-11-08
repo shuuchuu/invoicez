@@ -7,10 +7,10 @@ from typing import Annotated, Any, Literal
 from cyclopts import App, Parameter
 from rich.console import Console
 from rich.table import Table
+from schedz.diagnostics import Diagnostic
 from yaml import safe_dump
 
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.diagnostics import Diagnostic
 from invoicez.gcal.drafting import draft, draft_path
 from invoicez.gcal.linking import (
     LinkPlan,

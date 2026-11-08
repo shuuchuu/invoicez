@@ -2,10 +2,10 @@ from datetime import date, timedelta
 from typing import Any
 
 from pytest import approx, fixture, raises
+from schedz.grouping import Engagement, group_sessions
+from schedz.parsing import Session, SessionDescription, parse_events
 
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.grouping import Engagement, group_sessions
-from invoicez.gcal.parsing import Session, SessionDescription, parse_events
 from invoicez.gcal.pricing import Pricing, number, price, render_template
 from invoicez.gcal.settings import GcalSettings
 from invoicez.variables import InvoiceLine

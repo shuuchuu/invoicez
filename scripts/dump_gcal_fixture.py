@@ -16,6 +16,12 @@ from pathlib import Path
 from cyclopts import run
 from git import InvalidGitRepositoryError, Repo
 from platformdirs import user_cache_path
+from schedz.google import (
+    calendar_service,
+    credentials,
+    fetch_events,
+    list_calendars,
+)
 from yaml import safe_dump, safe_load
 
 from invoicez import app_name
@@ -26,12 +32,6 @@ from invoicez.gcal.anonymize import (
     find_leaks,
     select_fixture_events,
     summarize,
-)
-from invoicez.gcal.google import (
-    calendar_service,
-    credentials,
-    fetch_events,
-    list_calendars,
 )
 
 

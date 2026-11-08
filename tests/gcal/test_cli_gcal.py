@@ -5,14 +5,14 @@ from typing import Any
 
 from git import Repo
 from pytest import fail, fixture, mark, raises
+from schedz import google
+from schedz.grouping import group_sessions
+from schedz.parsing import parse_events
 from yaml import safe_dump, safe_load
 
 from invoicez.cli import gcal as gcal_cli
 from invoicez.cli import main
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal import google
-from invoicez.gcal.grouping import group_sessions
-from invoicez.gcal.parsing import parse_events
 from invoicez.gcal.settings import GcalSettings
 from invoicez.variables import Variables
 

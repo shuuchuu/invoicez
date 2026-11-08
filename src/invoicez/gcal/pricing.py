@@ -7,10 +7,10 @@ from typing import Any, Literal
 
 from jinja2 import Environment, StrictUndefined, TemplateError
 from pydantic import BaseModel
+from schedz.diagnostics import Diagnostic
+from schedz.grouping import Engagement
 
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.diagnostics import Diagnostic
-from invoicez.gcal.grouping import Engagement
 from invoicez.gcal.settings import GcalSettings, Rate, Training
 from invoicez.migration.documents import contiguous_spans
 from invoicez.variables import InvoiceLine

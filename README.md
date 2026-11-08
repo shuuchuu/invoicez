@@ -52,16 +52,21 @@ The values obtained from the merged configurations can be used directly in Jinja
 ## Billing trainings from Google Calendar
 
 `invoicez gcal` drafts invoices from the training sessions of a Google Calendar,
-and tells which sessions are billed. It only reads the calendar.
+and tells which sessions are billed. It only reads the calendar, through
+[schedz](https://github.com/shuuchuu/schedz), which deckz uses too: the calendar
+conventions below, the `calendar_id`, `title_pattern` and `durations` keys and
+the Google login are schedz's.
 
 ### Setup
 
 1. Install the extra: `pip install "invoicez[gcal]"`.
 2. In Google Cloud, enable the Google Calendar API and create an OAuth client of
-   type *Desktop app*. Save its JSON as `gcal-client-secrets.json` in the
-   invoicez user config directory (`~/.config/invoicez/` on Linux). The first
-   command opens a browser for consent; the token is cached next to it, readable
-   by you only.
+   type *Desktop app*. Save its JSON as `client-secrets.json` in schedz's user
+   config directory (`~/.config/schedz/` on Linux). The first command opens a
+   browser for consent; the token is cached next to it, readable by you only,
+   and serves every tool reading the calendar through schedz. Files from an
+   older invoicez (`~/.config/invoicez/gcal-client-secrets.json` and
+   `gcal-token.json`) are moved there by the first `gcal` command.
 3. Add a `gcal` section to `settings.yml`. `invoicez migrate-config OLD --gcal`
    prints one from an old-format `config.yml`.
 

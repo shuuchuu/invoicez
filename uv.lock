@@ -522,12 +522,12 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "schedz" },
 ]
 
 [package.optional-dependencies]
 gcal = [
-    { name = "google-api-python-client" },
-    { name = "google-auth-oauthlib" },
+    { name = "schedz", extra = ["google"] },
 ]
 
 [package.dev-dependencies]
@@ -550,13 +550,13 @@ requires-dist = [
     { name = "deepmerge", specifier = ">=3.0.1" },
     { name = "factur-x", specifier = ">=6.8" },
     { name = "gitpython", specifier = ">=3" },
-    { name = "google-api-python-client", marker = "extra == 'gcal'", specifier = ">=2" },
-    { name = "google-auth-oauthlib", marker = "extra == 'gcal'", specifier = ">=1" },
     { name = "jinja2", specifier = ">=3" },
     { name = "niquests", specifier = ">=3" },
     { name = "platformdirs", specifier = ">=4" },
     { name = "pydantic", specifier = ">=2.13" },
     { name = "pyyaml", specifier = ">=6" },
+    { name = "schedz", editable = "../schedz" },
+    { name = "schedz", extras = ["google"], marker = "extra == 'gcal'", editable = "../schedz" },
 ]
 provides-extras = ["gcal"]
 
@@ -1277,6 +1277,45 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/e8/1e186578076aff7a80735f625005fde678412ab609cd323ed182eb7d6b87/ruff-0.17.1-py3-none-win32.whl", hash = "sha256:1de0030a8aa78c65c5fecb84b2e5c390ac684c0452875a02afc7c083d49a496a", size = 9895093, upload-time = "2026-10-15T15:23:10.582Z" },
     { url = "https://files.pythonhosted.org/packages/6a/2e/da3d9589bae8e8b58f3a48bd5bc0b980232fb14a83bf02c3be7660f87c1b/ruff-0.17.1-py3-none-win_amd64.whl", hash = "sha256:5df76f16580fab58d0f6c98a3ac254a4abceb7b2489b8b678335869cff77b3d7", size = 10097955, upload-time = "2026-10-15T15:23:13.309Z" },
     { url = "https://files.pythonhosted.org/packages/df/c9/0f2a4dea06a5e12c1191ee3d96b1e1233797d0d5e18f97a2b909a95a9836/ruff-0.17.1-py3-none-win_arm64.whl", hash = "sha256:42400b9a6ff8515ff27796f07f92e0195be011c86e81e381606f58ea5502fef4", size = 9853542, upload-time = "2026-10-15T15:23:16.05Z" },
+]
+
+[[package]]
+name = "schedz"
+version = "0.1.0"
+source = { editable = "../schedz" }
+dependencies = [
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.optional-dependencies]
+google = [
+    { name = "google-api-python-client" },
+    { name = "google-auth-oauthlib" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "google-api-python-client", marker = "extra == 'google'", specifier = ">=2" },
+    { name = "google-auth-oauthlib", marker = "extra == 'google'", specifier = ">=1" },
+    { name = "platformdirs", specifier = ">=4" },
+    { name = "pydantic", specifier = ">=2.13" },
+    { name = "pyyaml", specifier = ">=6" },
+]
+provides-extras = ["google"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "bumpver", specifier = ">=2026.1132" },
+    { name = "doit", specifier = ">=0.37" },
+    { name = "google-api-python-client", specifier = ">=2" },
+    { name = "google-auth-oauthlib", specifier = ">=1" },
+    { name = "prek", specifier = ">=0.5.7" },
+    { name = "pyrefly", specifier = ">=1.4" },
+    { name = "pytest", specifier = ">=9" },
+    { name = "ruff", specifier = ">=0.17" },
+    { name = "types-pyyaml", specifier = ">=6" },
 ]
 
 [[package]]

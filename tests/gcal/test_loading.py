@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import Any
 
 from pytest import fixture, raises
+from schedz.exceptions import SchedzError
 from yaml import safe_dump, safe_load
 
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.loading import analyse, load_events, load_gcal
+from invoicez.gcal.loading import analyse, google_api, load_events, load_gcal
 from invoicez.gcal.reconcile import scan_documents
 from invoicez.gcal.settings import GcalSettings
 
@@ -88,7 +89,7 @@ def test_load_events_from_a_file_that_is_not_a_list(
 ) -> None:
     (tmp_path / "events.json").write_text("{}", encoding="utf8")
 
-    with raises(InvoicezError, match="JSON list"):
+    with raises(SchedzError, match="JSON list"):
         load_events(gcal_settings, events_file=tmp_path / "events.json")
 
 
@@ -103,7 +104,7 @@ def test_load_events_without_the_extra(
     real_import = builtins.__import__
 
     def failing_import(name: str, *args: Any, **kwargs: Any) -> Any:
-        if name == "invoicez.gcal" and "google" in (args[2] or ()):
+        if name == "schedz" and "google" in (args[2] or ()):
             msg = "No module named 'googleapiclient'"
             raise ImportError(msg)
         return real_import(name, *args, **kwargs)
@@ -111,12 +112,32 @@ def test_load_events_without_the_extra(
     monkeypatch.setattr(builtins, "__import__", failing_import)
     settings = gcal_settings.model_copy(update={"calendar_id": "calendar-id"})
 
-    with raises(InvoicezError, match=r"pip install invoicez\[gcal\]"):
+    with raises(SchedzError, match=r"pip install invoicez\[gcal\]"):
         load_events(settings)
 
 
+def test_google_api_moves_the_old_credentials_once(config_dirs: Path) -> None:
+    old_dir, new_dir = config_dirs / "invoicez", config_dirs / "schedz"
+    old_dir.mkdir()
+    (old_dir / "gcal-client-secrets.json").write_text("secrets", encoding="utf8")
+    (old_dir / "gcal-token.json").write_text("old token", encoding="utf8")
+
+    google_api()
+
+    assert sorted(p.name for p in old_dir.iterdir()) == []
+    assert (new_dir / "client-secrets.json").read_text(encoding="utf8") == "secrets"
+    assert (new_dir / "token.json").read_text(encoding="utf8") == "old token"
+
+    # A newer token in schedz's directory is never overwritten.
+    (old_dir / "gcal-token.json").write_text("stale token", encoding="utf8")
+    google_api()
+
+    assert (new_dir / "token.json").read_text(encoding="utf8") == "old token"
+    assert (old_dir / "gcal-token.json").is_file()
+
+
 def test_load_events_from_google(gcal_settings: GcalSettings, monkeypatch: Any) -> None:
-    from invoicez.gcal import google
+    from schedz import google
 
     calls: list[Any] = []
     monkeypatch.setattr(google, "credentials", lambda: "creds")

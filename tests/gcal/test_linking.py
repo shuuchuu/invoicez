@@ -3,10 +3,11 @@ from pathlib import Path
 from typing import Any
 
 from pytest import raises
+from schedz.grouping import Engagement, group_sessions
+from schedz.parsing import Session, SessionDescription
 from yaml import safe_dump, safe_load
 
 from invoicez.exceptions import InvoicezError
-from invoicez.gcal.grouping import Engagement, group_sessions
 from invoicez.gcal.linking import (
     Link,
     UnlinkedInvoice,
@@ -14,7 +15,6 @@ from invoicez.gcal.linking import (
     scan_unlinked_invoices,
     write_link,
 )
-from invoicez.gcal.parsing import Session, SessionDescription
 from invoicez.gcal.reconcile import classify, scan_documents
 
 _MONDAY = date(2025, 10, 6)
