@@ -266,3 +266,11 @@ completes invoice numbers for `run`, `send`, `cancel` and `paid`.
 ## Usage
 
 See the `--help` flag of the `invoicez` command line tool.
+
+## Releasing
+
+1. `uv run bumpver update --minor` (or `--patch`, `--major`): bumps, commits, tags
+   and pushes.
+2. `uv run doit publish`: builds and uploads to PyPI with the token of
+   `creds.env`, a gitignored file at the repository's root holding one line,
+   `export UV_PUBLISH_TOKEN=pypi-...`, readable by you only (`chmod 400`).
