@@ -14,7 +14,7 @@ class _App(App):
         self,
         *,
         prog_name: str | None = None,
-        shell: Literal["zsh", "bash", "fish"] | None = None,
+        shell: Literal["zsh", "bash", "fish", "powershell"] | None = None,
     ) -> str:
         script = super().generate_completion(prog_name=prog_name, shell=shell)
         if not script.startswith("#compdef"):

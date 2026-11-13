@@ -4,9 +4,9 @@ authors = [
   {name = "NyxAether", email = "contact.nyxhemera@gmail.com"},
 ]
 dependencies = [
-  "cyclopts >= 4",
-  "deepmerge>=3.0.1",
-  "factur-x >= 6.8",
+  "cyclopts >= 5",
+  "deepmerge >= 4",
+  "factur-x >= 7.9",
   "gitpython >= 3",
   "jinja2 >= 3",
   "niquests >= 3",

@@ -1,7 +1,10 @@
-# BG-1 entry: invoice note (subject code + text)
+# The data dict factur-x's generate_xml takes: header fields keyed by their
+# EN16931 business term (BT-n), groups (BG-n) as lists of such dicts, and
+# parties as dicts keyed by factur-x's own field names.
 from datetime import date
 from typing import NotRequired, TypedDict
 
+# BG-1 entry: invoice note (subject code + text)
 NoteBT = TypedDict("NoteBT", {"BT-21": NotRequired[str], "BT-22": str})
 
 # BG-3 entry: previous invoice reference
@@ -9,53 +12,27 @@ PreviousInvoiceBT = TypedDict(
     "PreviousInvoiceBT", {"BT-25": str, "BT-26": date}, total=False
 )
 
-# Seller information
-SellerBT = TypedDict(
-    "SellerBT",
-    {
-        "BT-27": str,
-        "BT-29": NotRequired[dict[str, str]],
-        "BT-30": NotRequired[str],
-        "BT-30-1": NotRequired[str],
-        "BT-31": str,
-        "BT-34": NotRequired[str],
-        "BT-34-1": NotRequired[str],
-        "BT-35": str,
-        "BT-37": str,
-        "BT-38": str,
-        "BT-40": str,
-        "BT-42": str,
-        "BT-43": str,
-        "BT-63": str,
-        "BT-81": str,
-        "BT-84": str,
-        "BT-85": str,
-        "BT-86": str,
-    },
-)
 
-# Buyer information
-CompanyBT = TypedDict(
-    "CompanyBT",
-    {
-        "BT-44": str,
-        "BT-47": str,
-        "BT-48": str,
-        "BT-49": NotRequired[str],
-        "BT-49-1": NotRequired[str],
-        "BT-50": str,
-        "BT-52": str,
-        "BT-53": str,
-        "BT-55": str,
-        # Trade Delivery Hack
-        "BT-70": str,
-        "BT-71": dict[str, str],
-        "BT-75": str,
-        "BT-77": str,
-        "BT-78": str,
-        "BT-80": str,
-    },
-)
+class ContactBT(TypedDict, total=False):
+    phone: str
+    email: str
+
+
+# Seller (BG-4), buyer (BG-7) or delivery (BG-13) party
+class PartyBT(TypedDict, total=False):
+    name: str
+    # Scheme ID to identifier
+    identifiers: dict[str, str]
+    legal_identifier: str
+    legal_identifier_schemeid: str
+    vat_identifier: str
+    einvoicing_addr: str
+    einvoicing_addr_schemeid: str
+    contacts: list[ContactBT]
+    addr_l1: str
+    city: str
+    postcode: str
+    country_code: str
 
 
 # BG-23 entry: TVA breakdown
@@ -103,41 +80,12 @@ BT = TypedDict(
         "BT-13": str,
         "BT-23": str,
         "BT-24": str,
-        "BT-57": str,
         "BG-1": list[NoteBT],
         "BG-3": list[PreviousInvoiceBT],
-        # Seller
-        "BT-27": str,
-        "BT-29": dict[str, str],
-        "BT-30": str,
-        "BT-30-1": str,
-        "BT-31": str,
-        "BT-34": str,
-        "BT-34-1": str,
-        "BT-35": str,
-        "BT-37": str,
-        "BT-38": str,
-        "BT-40": str,
-        "BT-42": str,
-        "BT-43": str,
-        # Buyer
-        "BT-44": str,
-        "BT-47": str,
-        "BT-48": str,
-        "BT-49": str,
-        "BT-49-1": str,
-        "BT-50": str,
-        "BT-52": str,
-        "BT-53": str,
-        "BT-55": str,
-        # Trade
-        "BT-63": str,
-        "BT-70": str,
-        "BT-71": dict[str, str],
-        "BT-75": str,
-        "BT-77": str,
-        "BT-78": str,
-        "BT-80": str,
+        # Parties
+        "BG-4": PartyBT,
+        "BG-7": PartyBT,
+        "BG-13": PartyBT,
         # Payment means
         "BT-81": str,
         "BT-84": str,
@@ -147,7 +95,6 @@ BT = TypedDict(
         "BT-106": str,
         "BT-109": str,
         "BT-110": str,
-        "BT-110-1": str,
         "BT-112": str,
         "BT-115": str,
         # Groups

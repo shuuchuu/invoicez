@@ -3,11 +3,10 @@ from datetime import date
 
 from invoicez.building.xml.bt_dict_type import (
     BT,
-    CompanyBT,
     InvoiceLineBT,
     NoteBT,
+    PartyBT,
     PreviousInvoiceBT,
-    SellerBT,
     TVABreakdownBT,
 )
 from invoicez.variables import (
@@ -35,58 +34,49 @@ def _convert_tva(tva: TVA) -> TVABreakdownBT:
     return d
 
 
-def _convert_seller(seller: Seller) -> SellerBT:
-    vat_id = seller.vat_id
+def _convert_seller(seller: Seller) -> PartyBT:
     return {
-        "BT-27": seller.name,
-        "BT-29": {"0009": seller.siret},  # SIRET-CODE scheme
-        "BT-30": seller.siren,
-        "BT-30-1": "0002",  # SIRENE scheme
-        "BT-34": seller.electronic_address,
-        "BT-34-1": seller.electronic_address_scheme,
-        "BT-40": seller.country,
-        "BT-35": seller.address,
-        "BT-37": seller.city,
-        "BT-38": seller.postcode,
-        "BT-31": vat_id,
-        "BT-43": seller.email,
-        "BT-42": seller.phone,
-        "BT-63": vat_id,
-        "BT-81": seller.means_code,
-        "BT-84": seller.iban,
-        "BT-85": seller.account_name,
-        "BT-86": seller.bic,
+        "name": seller.name,
+        "identifiers": {"0009": seller.siret},  # SIRET-CODE scheme
+        "legal_identifier": seller.siren,
+        "legal_identifier_schemeid": "0002",  # SIRENE scheme
+        "vat_identifier": seller.vat_id,
+        "einvoicing_addr": seller.electronic_address,
+        "einvoicing_addr_schemeid": seller.electronic_address_scheme,
+        "contacts": [{"phone": seller.phone, "email": seller.email}],
+        "addr_l1": seller.address,
+        "city": seller.city,
+        "postcode": seller.postcode,
+        "country_code": seller.country,
     }
 
 
-def _convert_company(company: Company) -> CompanyBT:
-    vat_id = compute_vat_id(company.siren)
-    d: CompanyBT = {
-        "BT-44": company.name,
-        "BT-50": company.address,
-        "BT-52": company.city,
-        "BT-53": company.postcode,
-        "BT-55": company.country,
-        "BT-47": company.siren,
-        "BT-48": vat_id,
-        # TRADE MOCK
-        # ApplicableHeaderTradeDelivery is mandatory in the definition of CII
-        # but not in en16931. Check fail if not indicated
-        "BT-71": {
-            "0002": company.siren,  # SIRENE scheme, takes the SIREN
-            #  directly
-        },
-        "BT-70": company.name,
-        "BT-80": company.country,
-        "BT-78": company.postcode,
-        "BT-77": company.city,
-        "BT-75": company.address,
+def _convert_buyer(company: Company) -> PartyBT:
+    return {
+        "name": company.name,
+        "legal_identifier": company.siren,
+        "legal_identifier_schemeid": "0002",  # SIRENE scheme
+        "vat_identifier": compute_vat_id(company.siren),
+        "einvoicing_addr": company.electronic_address,
+        "einvoicing_addr_schemeid": company.electronic_address_scheme,
+        "addr_l1": company.address,
+        "city": company.city,
+        "postcode": company.postcode,
+        "country_code": company.country,
     }
-    if company.electronic_address is not None:
-        d["BT-49"] = company.electronic_address
-    if company.electronic_address_scheme is not None:
-        d["BT-49-1"] = company.electronic_address_scheme
-    return d
+
+
+def _convert_delivery(company: Company) -> PartyBT:
+    # ApplicableHeaderTradeDelivery is mandatory in CII but not in en16931: the
+    # check fails without it, so the buyer stands for the delivery party.
+    return {
+        "identifiers": {"0002": company.siren},  # SIRENE scheme
+        "name": company.name,
+        "addr_l1": company.address,
+        "city": company.city,
+        "postcode": company.postcode,
+        "country_code": company.country,
+    }
 
 
 def _convert_notices(notices: Notices) -> list[NoteBT]:
@@ -155,13 +145,16 @@ def _add_reference(d: BT, reference: str | None, company: Company) -> None:
 
 
 def _add_seller(d: BT, seller: Seller) -> None:
-    # SellerBT's keys are BT's, but TypedDicts are open, so update() can't know.
-    d.update(_convert_seller(seller))  # pyrefly: ignore[no-matching-overload]
+    d["BG-4"] = _convert_seller(seller)
+    d["BT-81"] = seller.means_code
+    d["BT-84"] = seller.iban
+    d["BT-85"] = seller.account_name
+    d["BT-86"] = seller.bic
 
 
 def _add_buyer(d: BT, company: Company) -> None:
-    # Same as for _add_seller.
-    d.update(_convert_company(company))  # pyrefly: ignore[no-matching-overload]
+    d["BG-7"] = _convert_buyer(company)
+    d["BG-13"] = _convert_delivery(company)
 
 
 def _add_invoice_line(
@@ -187,9 +180,7 @@ def _add_invoice_line(
     return invoice_line.pu * invoice_line.n
 
 
-def _add_products(
-    d: BT, products: Iterable[InvoiceLine], tva: TVA, currency: str
-) -> None:
+def _add_products(d: BT, products: Iterable[InvoiceLine], tva: TVA) -> None:
     lines: list[InvoiceLineBT] = []
     line_total = 0.0
     for invoice_line in products:
@@ -202,7 +193,6 @@ def _add_products(
     d["BT-106"] = f"{line_total:.2f}"  # HT
     d["BT-109"] = f"{line_total:.2f}"  # HT
     d["BT-110"] = f"{line_tva:.2f}"  # TVA
-    d["BT-110-1"] = currency  # Currency
     d["BT-112"] = f"{line_ttc:.2f}"  # TTC
     d["BT-115"] = f"{line_ttc:.2f}"  # TTC
 
@@ -229,5 +219,5 @@ def convert(variables: Variables) -> BT:
     _add_reference(d, variables.reference, variables.company)
     _add_seller(d, variables.user)
     _add_buyer(d, variables.company)
-    _add_products(d, variables.products, variables.tva, variables.invoice_meta.currency)
+    _add_products(d, variables.products, variables.tva)
     return d

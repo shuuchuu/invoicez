@@ -67,12 +67,13 @@ def _validate(console: Console, pdf_bytes: bytes) -> None:
 def _preview(console: Console, variables: Variables, pdf_path: Path) -> None:
     bt = convert(variables)
     kind = "Credit note" if bt["BT-3"] == "381" else "Invoice"
-    address = bt.get("BT-49")
-    if address is not None and bt.get("BT-49-1"):
-        address = f"{bt['BT-49-1']}:{address}"
+    buyer = bt["BG-7"]
+    address = buyer.get("einvoicing_addr")
+    if address is not None and buyer.get("einvoicing_addr_schemeid"):
+        address = f"{buyer['einvoicing_addr_schemeid']}:{address}"
     grid = Table.grid(padding=(0, 2))
     grid.add_row(kind, f"{bt['BT-1']} of {bt['BT-2']}")
-    grid.add_row("Buyer", bt["BT-44"])
+    grid.add_row("Buyer", buyer["name"])
     grid.add_row("Sent to", address or "[bold red]no electronic address[/]")
     grid.add_row("Total", f"{bt['BT-112']} {bt['BT-5']} incl. VAT")
     grid.add_row("PDF", str(pdf_path))
