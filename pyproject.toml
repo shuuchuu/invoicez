@@ -22,7 +22,7 @@ license-files = ["LICENSE"]
 name = "invoicez"
 readme = "README.md"
 requires-python = ">= 3.13"
-version = "6.1.0"
+version = "6.2.0"
 
 [dependency-groups]
 dev = [
@@ -73,7 +73,7 @@ commit = true
 tag = true
 push = true
 commit_message = "Bump version to {new_version}"
-current_version = "6.1.0"
+current_version = "6.2.0"
 pre_commit_hook = "scripts/bumpver_pre_commit.sh"
 tag_message = "{new_version}"
 version_pattern = "MAJOR.MINOR.PATCH"
