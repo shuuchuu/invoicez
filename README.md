@@ -151,7 +151,7 @@ is run from:
 
 - `build/`: intermediate LaTeX and XML files, deleted by `invoicez clean`.
 - `sendbox/`: the PDFs built by `invoicez run` and `invoicez gcal bill --build`.
-- `archive/<company>/<year>/`: the PDFs of the invoices sent, as sent.
+- `archive/<year>/`: the PDFs of the invoices sent, as sent.
 
 `build/` and `sendbox/` are generated and can be ignored by git; `archive/` is
 the record of what was sent.
@@ -159,10 +159,9 @@ the record of what was sent.
 - `invoicez send DOCUMENT [--yes]`: builds the invoice in `sendbox/`, validates
   it with SuperPDP, previews it (buyer, electronic address, total) and sends it
   once confirmed. It then waits a few seconds for SuperPDP to process it and
-  moves its PDF to `archive/`, under the company of the document and the year
-  of its date, unless SuperPDP found it invalid. It refuses an invoice whose
-  number SuperPDP already has, unless SuperPDP found it invalid, so it is safe
-  to run again. `--yes` sends without asking.
+  moves its PDF to `archive/`, under the year of its date, unless SuperPDP
+  found it invalid. It refuses an invoice whose number SuperPDP already has,
+  unless SuperPDP found it invalid, so it is safe to run again. `--yes` sends without asking.
 - `invoicez status [--all]`: the invoices needing action, read from the
   repository and SuperPDP: those with a problem (invalid, rejected, refused,
   disputed, or failing at the administration), those the buyer's platform has

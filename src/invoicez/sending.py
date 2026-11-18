@@ -104,7 +104,7 @@ def send_document(
     """Build an invoice, send it via SuperPDP once confirmed, then archive its PDF.
 
     The PDF is built in sendbox/. Once sent, and unless SuperPDP finds it invalid,
-    it moves to archive/<company>/<year>/.
+    it moves to archive/<year>/.
 
     Args:
         console: Where to print.
@@ -161,7 +161,7 @@ def send_document(
         raise InvoicezError(msg)
 
     year = date.fromisoformat(str(data["date"])).year
-    archive_path = paths.archive_dir / data["company"] / str(year) / pdf_path.name
+    archive_path = paths.archive_dir / str(year) / pdf_path.name
     if archive_path.exists():
         msg = (
             f"{archive_path.relative_to(paths.git_dir)} already exists, "

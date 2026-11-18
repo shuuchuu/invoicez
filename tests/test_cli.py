@@ -343,7 +343,7 @@ def superpdp(monkeypatch: Any) -> dict[str, Any]:
 
 
 _SENDBOX_PDF = Path("sendbox/2020-10-001-Company.pdf")
-_ARCHIVED_PDF = Path("archive/company1/2020/2020-10-001-Company.pdf")
+_ARCHIVED_PDF = Path("archive/2020/2020-10-001-Company.pdf")
 
 
 def test_send_archives_the_sent_invoice(
@@ -362,7 +362,7 @@ def test_send_archives_the_sent_invoice(
     assert "Émise par la plateforme (fr:201)" in output
 
 
-def test_send_archives_credit_notes_under_the_cancelled_company(
+def test_send_archives_credit_notes_under_their_year(
     working_dir: Path, superpdp: dict[str, Any]
 ) -> None:
     from invoicez.cli import main
@@ -374,7 +374,7 @@ def test_send_archives_credit_notes_under_the_cancelled_company(
 
     send(number)
 
-    archived = working_dir / "archive" / "company1" / f"{datetime.now():%Y}"
+    archived = working_dir / "archive" / f"{datetime.now():%Y}"
     assert (archived / f"{number}-Company.pdf").is_file()
 
 

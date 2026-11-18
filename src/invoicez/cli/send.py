@@ -14,7 +14,7 @@ def send(
     """Build an invoice and send it via SuperPDP once confirmed, then archive its PDF.
 
     The PDF is built in sendbox/ and, once sent, moved to archive/ in a folder per
-    company and year. Invoices SuperPDP already has are not sent again.
+    year. Invoices SuperPDP already has are not sent again.
 
     Args:
         document: YAML file of the invoice, or its number (e.g. 2026-10-003).
