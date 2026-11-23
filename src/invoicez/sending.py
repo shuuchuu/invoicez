@@ -13,12 +13,14 @@ from invoicez.paths import Paths
 from invoicez.runner import load_document
 from invoicez.runner import run as runner_run
 from invoicez.superpdp.invoices import (
+    OutcomeUnknownError,
     get_invoice,
     invoice_number,
     list_sent_invoices,
     send_invoice,
     validate_invoice,
 )
+from invoicez.superpdp.recovery import look_for
 from invoicez.superpdp.statuses import (
     INVALID,
     describe,
@@ -40,16 +42,13 @@ def confirm(prompt: str) -> bool:
         return False
 
 
-def _check_not_sent(number: str) -> None:
-    for invoice in list_sent_invoices():
-        if invoice_number(invoice) == number and was_transmitted(invoice):
-            latest = latest_event(invoice)
-            status = describe(latest) if latest else "no status yet"
-            msg = (
-                f"Invoice {number} was already sent (SuperPDP id {invoice['id']}, "
-                f"{status})"
-            )
-            raise InvoicezError(msg)
+def _is_invoice(invoice: dict, number: str) -> bool:
+    return number in {invoice_number(invoice), invoice.get("external_id")}
+
+
+def _status(invoice: dict) -> str:
+    latest = latest_event(invoice)
+    return describe(latest) if latest else "no status yet"
 
 
 def _validate(console: Console, pdf_bytes: bytes) -> None:
@@ -80,15 +79,72 @@ def _preview(console: Console, variables: Variables, pdf_path: Path) -> None:
     console.print(grid)
 
 
-def _wait_for_status(invoice_id: int) -> dict:
+def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) -> dict:
+    """Send an invoice, finding it at SuperPDP if it does not confirm receiving it.
+
+    Args:
+        console: Where to print.
+        pdf_bytes: PDF of the invoice.
+        number: Number of the invoice.
+        known_ids: SuperPDP ids of the invoices sent before, not to be mistaken for
+            this one: those found invalid share their number with the next attempt.
+
+    Returns:
+        The invoice, with at least its SuperPDP id.
+
+    Raises:
+        InvoicezError: If the invoice was not sent, or may not have been.
+    """
+    try:
+        return send_invoice(pdf_bytes, external_id=number)
+    except OutcomeUnknownError as error:
+        unknown = error
+    console.print(
+        f"{unknown}\nThe invoice may have been sent all the same, looking for it...",
+        style="yellow",
+        markup=False,
+        highlight=False,
+    )
+
+    def find() -> dict | None:
+        for invoice in list_sent_invoices():
+            if invoice["id"] not in known_ids and _is_invoice(invoice, number):
+                return invoice
+        return None
+
+    if (found := look_for(find)) is not None:
+        return found
+    msg = (
+        f"{unknown}. Invoice {number} may have been sent all the same: wait a few "
+        "minutes and check that SuperPDP does not have it with invoicez status "
+        "before sending it again"
+    )
+    raise InvoicezError(msg) from unknown
+
+
+def _wait_for_status(console: Console, invoice: dict) -> dict:
     deadline = time.monotonic() + STATUS_WAIT_SECONDS
-    invoice = get_invoice(invoice_id)
-    while time.monotonic() < deadline:
-        latest = latest_event(invoice)
-        if latest is not None and latest["status_code"] != "api:uploaded":
+    while True:
+        failure = None
+        try:
+            invoice = get_invoice(invoice["id"])
+        except InvoicezError as error:
+            failure = error
+        else:
+            latest = latest_event(invoice)
+            if latest is not None and latest["status_code"] != "api:uploaded":
+                break
+        if time.monotonic() >= deadline:
             break
         time.sleep(STATUS_POLL_SECONDS)
-        invoice = get_invoice(invoice_id)
+    if failure is not None:
+        console.print(
+            f"The invoice was sent but its status could not be read, see invoicez "
+            f"status later: {failure}",
+            style="yellow",
+            markup=False,
+            highlight=False,
+        )
     return invoice
 
 
@@ -118,15 +174,22 @@ def send_document(
         "sent", or "skipped" if sending was not confirmed.
 
     Raises:
-        InvoicezError: If the document is a quote, was already sent, is invalid, or
-            SuperPDP rejects it.
+        InvoicezError: If the document is a quote, was already sent, is invalid,
+            SuperPDP rejects it, or may not have received it.
     """
     data = load_document(path, paths.git_dir)
     if data.get("quote"):
         msg = f"{path.name} is a quote, only invoices are sent"
         raise InvoicezError(msg)
     number = str(data["document_number"])
-    _check_not_sent(number)
+    sent_before = list_sent_invoices()
+    for invoice in sent_before:
+        if _is_invoice(invoice, number) and was_transmitted(invoice):
+            msg = (
+                f"Invoice {number} was already sent (SuperPDP id {invoice['id']}, "
+                f"{_status(invoice)})"
+            )
+            raise InvoicezError(msg)
 
     pdf_path = runner_run(
         path,
@@ -149,13 +212,13 @@ def send_document(
         console.print(f"Not sent, left in {relative_pdf_path}", highlight=False)
         return "skipped"
 
-    invoice = _wait_for_status(send_invoice(pdf_bytes, external_id=number)["id"])
-    latest = latest_event(invoice)
-    status = describe(latest) if latest else "no status yet"
+    known_ids = {invoice["id"] for invoice in sent_before}
+    invoice = _wait_for_status(console, _send(console, pdf_bytes, number, known_ids))
     console.print(
-        f"Invoice {number} sent with SuperPDP id {invoice['id']}: {status}",
+        f"Invoice {number} sent with SuperPDP id {invoice['id']}: {_status(invoice)}",
         highlight=False,
     )
+    latest = latest_event(invoice)
     if latest is not None and latest["status_code"] == INVALID:
         msg = f"SuperPDP found invoice {number} invalid, left in {relative_pdf_path}"
         raise InvoicezError(msg)

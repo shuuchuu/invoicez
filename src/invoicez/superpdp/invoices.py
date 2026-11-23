@@ -10,6 +10,16 @@ from invoicez.superpdp.statuses import PAID
 
 API_BASE = f"{ENDPOINT}/v1.beta"
 
+TIMEOUT_SECONDS = 30
+# For requests creating something: giving up on them leaves their outcome unknown.
+# SuperPDP checks the recipient of an invoice in the Peppol directory before answering,
+# and has been seen taking a minute.
+CREATE_TIMEOUT_SECONDS = 120
+
+
+class OutcomeUnknownError(InvoicezError):
+    """SuperPDP got a request creating something, and may have carried it out."""
+
 
 def _auth_headers(token: Token) -> dict[str, str]:
     return {"Authorization": f"Bearer {token.access_token}"}
@@ -55,17 +65,62 @@ def validate_invoice(pdf_bytes: bytes) -> dict:
 
     Returns:
         Response dictionary from the API endpoint.
+
+    Raises:
+        InvoicezError: If SuperPDP cannot be reached or answers with an error.
     """
-    response = niquests.post(
-        f"{API_BASE}/validation_reports",
-        files={"file": ("invoice.pdf", pdf_bytes)},
-        timeout=30,
-    )
-    return _json_or_raise(response, "Invoice validation")
+    action = "Invoice validation"
+    try:
+        response = niquests.post(
+            f"{API_BASE}/validation_reports",
+            files={"file": ("invoice.pdf", pdf_bytes)},
+            timeout=TIMEOUT_SECONDS,
+        )
+    except niquests.RequestException as error:
+        raise InvoicezError(_network_message(action, error)) from error
+    return _json_or_raise(response, action)
+
+
+def _network_message(action: str, error: niquests.RequestException) -> str:
+    return f"{action} failed: {error}"
+
+
+def _call(
+    method: str, path: str, *, timeout: float = TIMEOUT_SECONDS, **kwargs: Any
+) -> niquests.Response:
+    """Make an authenticated request, logging in again once if the token is refused.
+
+    Network errors of the request itself are left as raised by niquests, unlike those
+    of the login.
+
+    Args:
+        method: HTTP method.
+        path: Path of the endpoint, under the API base.
+        timeout: How long to wait for the response, in seconds.
+        **kwargs: Passed to niquests.
+
+    Returns:
+        The response, whatever its status.
+    """
+
+    def call(token: Token) -> niquests.Response:
+        return niquests.request(
+            method,
+            f"{API_BASE}{path}",
+            headers=_auth_headers(token),
+            timeout=timeout,
+            **kwargs,
+        )
+
+    response = call(get_access_token())
+    # A cached token can be revoked before it expires; nothing was done with it.
+    if response.status_code == 401:
+        response = call(get_access_token(force_refresh=True))
+    return response
 
 
 def _request(method: str, path: str, action: str, **kwargs: Any) -> dict:
-    """Make an authenticated request, logging in again once if the token is refused.
+    """Make an authenticated request to an endpoint answering in JSON.
 
     Args:
         method: HTTP method.
@@ -75,22 +130,50 @@ def _request(method: str, path: str, action: str, **kwargs: Any) -> dict:
 
     Returns:
         Decoded JSON body of the response.
+
+    Raises:
+        InvoicezError: If SuperPDP cannot be reached or answers with an error.
     """
-
-    def call(token: Token) -> niquests.Response:
-        return niquests.request(
-            method,
-            f"{API_BASE}{path}",
-            headers=_auth_headers(token),
-            timeout=30,
-            **kwargs,
-        )
-
-    response = call(get_access_token())
-    # A cached token can be revoked before it expires; nothing was done with it.
-    if response.status_code == 401:
-        response = call(get_access_token(force_refresh=True))
+    try:
+        response = _call(method, path, **kwargs)
+    except niquests.RequestException as error:
+        raise InvoicezError(_network_message(action, error)) from error
     return _json_or_raise(response, action)
+
+
+def _create(path: str, action: str, **kwargs: Any) -> dict:
+    """Make an authenticated request creating something.
+
+    Args:
+        path: Path of the endpoint, under the API base.
+        action: What the request is doing, used in error messages.
+        **kwargs: Passed to niquests.
+
+    Returns:
+        What was created, with its id.
+
+    Raises:
+        OutcomeUnknownError: If it may have been created: no answer came back, or one
+            that does not tell.
+        InvoicezError: If it was not created.
+    """
+    try:
+        response = _call("POST", path, timeout=CREATE_TIMEOUT_SECONDS, **kwargs)
+    except niquests.ConnectTimeout as error:
+        raise InvoicezError(_network_message(action, error)) from error
+    except niquests.RequestException as error:
+        raise OutcomeUnknownError(_network_message(action, error)) from error
+    try:
+        created = _json_or_raise(response, action)
+    except InvoicezError as error:
+        # SuperPDP, or a proxy before it, may fail after creating it.
+        if response.status_code is not None and 400 <= response.status_code < 500:
+            raise
+        raise OutcomeUnknownError(error.message) from error
+    if "id" not in created:
+        msg = f"{action} returned no id: {response.text!r}"
+        raise OutcomeUnknownError(msg)
+    return created
 
 
 def list_sent_invoices() -> list[dict]:
@@ -141,8 +224,7 @@ def mark_paid(invoice_id: int) -> dict:
     Returns:
         The event created, queued by SuperPDP to be sent on.
     """
-    return _request(
-        "POST",
+    return _create(
         "/invoice_events",
         "Marking the invoice as paid",
         json={"invoice_id": invoice_id, "status_code": PAID},
@@ -160,8 +242,7 @@ def send_invoice(pdf_bytes: bytes, *, external_id: str | None = None) -> dict:
         The created invoice, as returned by the API endpoint.
     """
     _, xml_bytes = get_xml_from_pdf(pdf_bytes)
-    return _request(
-        "POST",
+    return _create(
         "/invoices",
         "Invoice sending",
         params={"external_id": external_id} if external_id else None,

@@ -18,6 +18,8 @@ from invoicez.building.xml.variables_to_bt_converter import convert
 from invoicez.cancellation import resolve_cancellation
 from invoicez.exceptions import InvoicezError
 from invoicez.paths import Paths
+from invoicez.superpdp import recovery
+from invoicez.superpdp.invoices import OutcomeUnknownError
 from invoicez.variables import Variables
 
 DATA_DIR = Path(__file__).parent / __name__
@@ -314,30 +316,48 @@ def superpdp(monkeypatch: Any) -> dict[str, Any]:
     Returns:
         The state of the fake: "sent" lists the invoices SuperPDP already has,
         "events" are those of an invoice once sent, "answer" is the reply to the
-        confirmation, and "external_ids" lists those of the invoices sent.
+        confirmation, and "external_ids" lists those of the invoices sent. Sending
+        raises "send_error" if set, after which "sent_after" is what SuperPDP has,
+        and reading a status raises "status_error" if set.
     """
     from invoicez import sending
 
     monkeypatch.setattr(sending, "STATUS_WAIT_SECONDS", 0)
+    monkeypatch.setattr(recovery, "RECOVERY_WAIT_SECONDS", 0)
+    monkeypatch.setattr(recovery, "RECOVERY_POLL_SECONDS", 0)
     state: dict[str, Any] = {
         "sent": [],
         "events": [_event("fr:201", "Émise par la plateforme")],
         "answer": "y",
         "external_ids": [],
+        "send_error": None,
+        "sent_after": None,
+        "status_error": None,
     }
 
     def send_invoice(_: bytes, *, external_id: str) -> dict[str, Any]:
         state["external_ids"].append(external_id)
+        if state["send_error"] is not None:
+            state["sent"] = state["sent_after"]
+            raise state["send_error"]
         return {"id": 42}
 
-    monkeypatch.setattr(sending, "list_sent_invoices", lambda: state["sent"])
+    def list_sent_invoices() -> list[dict[str, Any]]:
+        if isinstance(state["sent"], Exception):
+            raise state["sent"]
+        return state["sent"]
+
+    def get_invoice(id_: int) -> dict[str, Any]:
+        if state["status_error"] is not None:
+            raise state["status_error"]
+        return {"id": id_, "events": state["events"]}
+
+    monkeypatch.setattr(sending, "list_sent_invoices", list_sent_invoices)
     monkeypatch.setattr(
         sending, "validate_invoice", lambda _: {"data": [{"is_valid": True}]}
     )
     monkeypatch.setattr(sending, "send_invoice", send_invoice)
-    monkeypatch.setattr(
-        sending, "get_invoice", lambda id_: {"id": id_, "events": state["events"]}
-    )
+    monkeypatch.setattr(sending, "get_invoice", get_invoice)
     monkeypatch.setattr("builtins.input", lambda _: state["answer"])
     return state
 
@@ -461,6 +481,116 @@ def test_send_reports_problems_after_archiving(
     assert (working_dir / _ARCHIVED_PDF).is_file()
 
 
+_NUMBER = "2020-10-001"
+
+
+def _listed(id_: int, *codes: str, **extra: Any) -> dict[str, Any]:
+    return {
+        "id": id_,
+        "events": [_event(code) for code in codes],
+        "en_invoice": {"number": _NUMBER},
+        **extra,
+    }
+
+
+@mark.parametrize(
+    "found",
+    [
+        _listed(43, "api:uploaded"),
+        # Not read by SuperPDP yet.
+        {"id": 43, "external_id": _NUMBER},
+    ],
+)
+def test_send_finds_the_invoice_after_a_timeout(
+    working_dir: Path, superpdp: dict[str, Any], capsys: Any, found: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    superpdp["send_error"] = OutcomeUnknownError("timed out")
+    superpdp["sent_after"] = [found]
+    send(_NUMBER)
+
+    assert superpdp["external_ids"] == [_NUMBER]
+    assert (working_dir / _ARCHIVED_PDF).is_file()
+    assert not (working_dir / _SENDBOX_PDF).exists()
+    assert "sent with SuperPDP id 43" in capsys.readouterr().out
+
+
+def test_send_keeps_looking_for_the_invoice_after_a_timeout(
+    working_dir: Path, superpdp: dict[str, Any], monkeypatch: Any
+) -> None:
+    from invoicez import sending
+    from invoicez.cli.send import send
+
+    # What listing the invoices gives, before sending then while looking.
+    listings = [[], InvoicezError("down"), [], [_listed(43, "api:uploaded")]]
+
+    def list_sent_invoices() -> list[dict[str, Any]]:
+        listing = listings.pop(0)
+        if isinstance(listing, Exception):
+            raise listing
+        return listing
+
+    monkeypatch.setattr(recovery, "RECOVERY_WAIT_SECONDS", 60)
+    monkeypatch.setattr(sending, "list_sent_invoices", list_sent_invoices)
+    superpdp["send_error"] = OutcomeUnknownError("timed out")
+    send(_NUMBER)
+
+    assert listings == []
+    assert (working_dir / _ARCHIVED_PDF).is_file()
+
+
+@mark.parametrize(
+    "sent_after",
+    [
+        [],
+        # The attempt before, under the same number.
+        [_listed(7, "api:invalid")],
+        InvoicezError("down"),
+    ],
+)
+def test_send_tells_when_the_outcome_is_unknown(
+    working_dir: Path, superpdp: dict[str, Any], sent_after: Any
+) -> None:
+    from invoicez.cli.send import send
+
+    superpdp["sent"] = [_listed(7, "api:invalid")]
+    superpdp["send_error"] = OutcomeUnknownError("timed out")
+    superpdp["sent_after"] = sent_after
+    with raises(InvoicezError, match=r"timed out\. Invoice 2020-10-001 may have been"):
+        send(_NUMBER)
+
+    assert (working_dir / _SENDBOX_PDF).is_file()
+    assert not (working_dir / "archive").exists()
+
+
+def test_send_does_not_look_for_rejected_invoices(
+    working_dir: Path, superpdp: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    superpdp["send_error"] = InvoicezError("HTTP 400")
+    superpdp["sent_after"] = [_listed(43, "api:uploaded")]
+    with raises(InvoicezError, match=r"^HTTP 400$"):
+        send(_NUMBER)
+
+    assert (working_dir / _SENDBOX_PDF).is_file()
+
+
+def test_send_archives_when_the_status_cannot_be_read(
+    working_dir: Path, superpdp: dict[str, Any], capsys: Any
+) -> None:
+    from invoicez.cli.send import send
+
+    superpdp["status_error"] = InvoicezError("timed out")
+    send(_NUMBER)
+
+    assert (working_dir / _ARCHIVED_PDF).is_file()
+    output = capsys.readouterr().out
+    assert "its status could not be read" in output
+    assert "sent with SuperPDP id 42" in output
+
+
 def _sent(number: str, issue_date: str, *codes: str) -> dict[str, Any]:
     return {
         "id": abs(hash(number)),
@@ -562,16 +692,33 @@ def paying(monkeypatch: Any) -> dict[str, Any]:
     Returns:
         The state of the fake: "sent" lists the invoices SuperPDP has, "answer"
         is the reply to the confirmation, and "paid" lists the SuperPDP ids of
-        the invoices reported as paid.
+        the invoices reported as paid. Reporting raises "error" if set, after which
+        "events" are those of the invoice, or the error reading them raises.
     """
     from invoicez.cli import paid
 
-    state: dict[str, Any] = {"sent": [], "answer": "y", "paid": []}
+    state: dict[str, Any] = {
+        "sent": [],
+        "answer": "y",
+        "paid": [],
+        "error": None,
+        "events": [],
+    }
 
     def mark_paid(invoice_id: int) -> dict[str, Any]:
         state["paid"].append(invoice_id)
+        if state["error"] is not None:
+            raise state["error"]
         return _event("fr:212", "Encaissée")
 
+    def get_invoice(id_: int) -> dict[str, Any]:
+        if isinstance(state["events"], Exception):
+            raise state["events"]
+        return {"id": id_, "events": state["events"]}
+
+    monkeypatch.setattr(recovery, "RECOVERY_WAIT_SECONDS", 0)
+    monkeypatch.setattr(recovery, "RECOVERY_POLL_SECONDS", 0)
+    monkeypatch.setattr(paid, "get_invoice", get_invoice)
     monkeypatch.setattr(paid, "list_sent_invoices", lambda: state["sent"])
     monkeypatch.setattr(paid, "mark_paid", mark_paid)
     monkeypatch.setattr("builtins.input", lambda _: state["answer"])
@@ -650,6 +797,50 @@ def test_paid_checks_every_invoice_before_reporting(
         paid("2020-10-002", number)
 
     assert paying["paid"] == []
+
+
+def test_paid_finds_the_payment_after_a_timeout(
+    working_dir: Path, paying: dict[str, Any], capsys: Any
+) -> None:
+    from invoicez.cli.paid import paid
+
+    paying["sent"] = [_sent_with_id(7, "2020-10-001", "fr:203")]
+    paying["error"] = OutcomeUnknownError("timed out")
+    paying["events"] = [_event("fr:203"), _event("fr:212", "Encaissée", at=1)]
+    paid("2020-10-001")
+
+    assert paying["paid"] == [7]
+    assert "2020-10-001: Encaissée (fr:212)" in capsys.readouterr().out
+
+
+@mark.parametrize("events", [[_event("fr:203")], InvoicezError("down")])
+def test_paid_tells_when_the_outcome_is_unknown(
+    working_dir: Path, paying: dict[str, Any], events: Any
+) -> None:
+    from invoicez.cli.paid import paid
+
+    paying["sent"] = [
+        _sent_with_id(7, "2020-10-001", "fr:203"),
+        _sent_with_id(8, "2020-10-002", "fr:203"),
+    ]
+    paying["error"] = OutcomeUnknownError("timed out")
+    paying["events"] = events
+    with raises(InvoicezError, match=r"timed out\. 2020-10-001 may be reported"):
+        paid("2020-10-001", "2020-10-002")
+
+    assert paying["paid"] == [7]
+
+
+def test_paid_does_not_look_for_rejected_payments(
+    working_dir: Path, paying: dict[str, Any]
+) -> None:
+    from invoicez.cli.paid import paid
+
+    paying["sent"] = [_sent_with_id(7, "2020-10-001", "fr:203")]
+    paying["error"] = InvoicezError("HTTP 400")
+    paying["events"] = [_event("fr:212")]
+    with raises(InvoicezError, match=r"^HTTP 400$"):
+        paid("2020-10-001")
 
 
 def test_entrypoint_shows_errors_without_traceback(
