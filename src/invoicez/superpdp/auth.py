@@ -7,6 +7,7 @@ from dataclasses import asdict
 import niquests
 from pydantic.dataclasses import dataclass
 
+from invoicez.exceptions import InvoicezError
 from invoicez.superpdp.config import (
     ENDPOINT,
     load_credentials,
@@ -47,17 +48,21 @@ def _store_token(token: Token) -> None:
 
 def _request_token() -> Token:
     creds = load_credentials()
-    response = niquests.post(
-        f"{ENDPOINT}{TOKEN_ENDPOINT}",
-        data={
-            "grant_type": "client_credentials",
-            "client_id": creds.client_id,
-            "client_secret": creds.client_secret,
-        },
-        timeout=10,
-    )
-    response.raise_for_status()
-    body = response.json()
+    try:
+        response = niquests.post(
+            f"{ENDPOINT}{TOKEN_ENDPOINT}",
+            data={
+                "grant_type": "client_credentials",
+                "client_id": creds.client_id,
+                "client_secret": creds.client_secret,
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        body = response.json()
+    except niquests.RequestException as error:
+        msg = f"SuperPDP login failed: {error}"
+        raise InvoicezError(msg) from error
     expires_in = body.get("expires_in")
     expires_at = time.time() + expires_in if expires_in is not None else None
     return Token(access_token=body["access_token"], expires_at=expires_at)

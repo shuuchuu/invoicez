@@ -5,11 +5,12 @@ from pathlib import Path
 from typing import Any
 
 import niquests
-from pytest import MonkeyPatch, fixture, raises
+from pytest import MonkeyPatch, fixture, mark, raises
 
 from invoicez.exceptions import InvoicezError
-from invoicez.superpdp import invoices
+from invoicez.superpdp import auth, invoices
 from invoicez.superpdp.auth import Token
+from invoicez.superpdp.config import SuperPDPCredentials
 from invoicez.superpdp.statuses import (
     describe,
     latest_event,
@@ -33,8 +34,8 @@ def _response(status_code: int, body: Any) -> niquests.Response:
 
 @dataclass
 class _Api:
-    # Responses the next requests get, in order.
-    replies: list[niquests.Response] = field(default_factory=list)
+    # Responses the next requests get, or errors they raise, in order.
+    replies: list[niquests.Response | Exception] = field(default_factory=list)
     # Keyword arguments of the requests made, in order.
     calls: list[dict[str, Any]] = field(default_factory=list)
     # Access tokens handed out, by force_refresh value.
@@ -52,7 +53,10 @@ def api(monkeypatch: MonkeyPatch) -> _Api:
 
     def reply(*_: Any, **kwargs: Any) -> niquests.Response:
         fake.calls.append(kwargs)
-        return fake.replies.pop(0)
+        next_reply = fake.replies.pop(0)
+        if isinstance(next_reply, Exception):
+            raise next_reply
+        return next_reply
 
     def get_access_token(*, force_refresh: bool = False) -> Token:
         fake.tokens.append(force_refresh)
@@ -97,6 +101,95 @@ def test_send_invoice_passes_external_id(api: _Api) -> None:
     api.replies.append(_response(200, {"id": 42}))
     invoices.send_invoice(PDF.read_bytes(), external_id="2020-10-001")
     assert api.calls[0]["params"] == {"external_id": "2020-10-001"}
+
+
+def test_requests_creating_something_wait_longer(api: _Api) -> None:
+    api.replies.extend([_response(200, {"id": 42}) for _ in range(3)])
+    invoices.send_invoice(PDF.read_bytes())
+    invoices.mark_paid(42)
+    invoices.get_invoice(42)
+    assert [call["timeout"] for call in api.calls] == [120, 120, 30]
+
+
+@mark.parametrize(
+    "reply",
+    [
+        niquests.ReadTimeout("read timed out"),
+        niquests.ConnectionError("connection reset"),
+        _response(500, {"http_status_code": 500}),
+        _response(504, b"<html>Gateway Timeout</html>"),
+        _response(200, b"<html>not JSON</html>"),
+        _response(200, {"created_at": "now"}),
+    ],
+)
+def test_send_invoice_tells_when_the_outcome_is_unknown(
+    api: _Api, reply: niquests.Response | Exception
+) -> None:
+    api.replies.append(reply)
+    with raises(invoices.OutcomeUnknownError, match="Invoice sending"):
+        invoices.send_invoice(PDF.read_bytes())
+
+
+@mark.parametrize(
+    "reply",
+    [
+        niquests.ConnectTimeout("connect timed out"),
+        _response(400, {"http_status_code": 400}),
+    ],
+)
+def test_send_invoice_tells_when_nothing_was_sent(
+    api: _Api, reply: niquests.Response | Exception
+) -> None:
+    api.replies.append(reply)
+    with raises(InvoicezError) as error:
+        invoices.send_invoice(PDF.read_bytes())
+    assert not isinstance(error.value, invoices.OutcomeUnknownError)
+
+
+def test_mark_paid_tells_when_the_outcome_is_unknown(api: _Api) -> None:
+    api.replies.append(niquests.ReadTimeout("read timed out"))
+    with raises(invoices.OutcomeUnknownError, match="Marking the invoice as paid"):
+        invoices.mark_paid(42)
+
+
+def test_login_failure_means_nothing_was_sent(monkeypatch: MonkeyPatch) -> None:
+    def post(*_: Any, **__: Any) -> niquests.Response:
+        msg = "read timed out"
+        raise niquests.ReadTimeout(msg)
+
+    monkeypatch.setattr(auth, "_load_cached_token", lambda: None)
+    monkeypatch.setattr(auth.niquests, "post", post)
+    monkeypatch.setattr(
+        auth,
+        "load_credentials",
+        lambda: SuperPDPCredentials(client_id="id", client_secret="secret"),
+    )
+    with raises(InvoicezError, match="login failed: read timed out") as error:
+        invoices.send_invoice(PDF.read_bytes())
+    assert not isinstance(error.value, invoices.OutcomeUnknownError)
+
+
+def test_network_errors_name_the_action(api: _Api) -> None:
+    api.replies.extend([niquests.ReadTimeout("read timed out") for _ in range(3)])
+    with raises(InvoicezError, match="Listing sent invoices failed: read timed out"):
+        invoices.list_sent_invoices()
+    with raises(InvoicezError, match="Invoice validation failed: read timed out"):
+        invoices.validate_invoice(b"")
+    with raises(InvoicezError, match="Fetching the invoice as sent failed: read"):
+        invoices.get_original_invoice(42)
+
+
+def test_get_original_invoice_returns_the_file(api: _Api) -> None:
+    api.replies.extend(
+        [
+            _response(200, b"<xml/>"),
+            _response(400, {"http_status_code": 400, "message": "unknown invoice"}),
+        ]
+    )
+    assert invoices.get_original_invoice(42) == b"<xml/>"
+    assert api.calls[0]["params"] == {"format": "original"}
+    with raises(InvoicezError, match="HTTP 400: unknown invoice"):
+        invoices.get_original_invoice(42)
 
 
 def test_refused_token_is_refreshed_once(api: _Api) -> None:

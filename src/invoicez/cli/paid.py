@@ -7,7 +7,14 @@ from yaml import safe_load
 from invoicez.exceptions import InvoicezError
 from invoicez.paths import Paths
 from invoicez.sending import confirm
-from invoicez.superpdp.invoices import invoice_number, list_sent_invoices, mark_paid
+from invoicez.superpdp.invoices import (
+    OutcomeUnknownError,
+    get_invoice,
+    invoice_number,
+    list_sent_invoices,
+    mark_paid,
+)
+from invoicez.superpdp.recovery import look_for
 from invoicez.superpdp.statuses import (
     CANCELLED,
     PAID,
@@ -31,6 +38,46 @@ def _check(number: str, content: dict[str, Any], remote: dict | None) -> dict:
     return remote
 
 
+def _report(console: Console, number: str, invoice_id: int) -> dict:
+    """Report an invoice as paid, checking it was if SuperPDP does not confirm it.
+
+    Args:
+        console: Where to print.
+        number: Number of the invoice.
+        invoice_id: SuperPDP id of the invoice, not paid yet.
+
+    Returns:
+        The event created.
+
+    Raises:
+        InvoicezError: If the invoice was not reported as paid, or may not have been.
+    """
+    try:
+        return mark_paid(invoice_id)
+    except OutcomeUnknownError as error:
+        unknown = error
+    console.print(
+        f"{unknown}\n{number} may be reported as paid all the same, checking...",
+        style="yellow",
+        markup=False,
+        highlight=False,
+    )
+
+    def find() -> dict | None:
+        for event in get_invoice(invoice_id).get("events") or []:
+            if event["status_code"] == PAID:
+                return event
+        return None
+
+    if (found := look_for(find)) is not None:
+        return found
+    msg = (
+        f"{unknown}. {number} may be reported as paid all the same: wait a few minutes "
+        "before running invoicez paid again, which skips the invoices already paid"
+    )
+    raise InvoicezError(msg) from unknown
+
+
 def paid(*documents: str, yes: bool = False) -> None:
     """Report invoices sent via SuperPDP as paid in full today (fr:212, Encaissée).
 
@@ -43,7 +90,8 @@ def paid(*documents: str, yes: bool = False) -> None:
 
     Raises:
         InvoicezError: If an invoice is a credit note, was not sent through
-            SuperPDP, or is cancelled there.
+            SuperPDP, or is cancelled there, or if reporting one fails or may have:
+            those after it are not reported.
     """
     if not documents:
         msg = "Give the invoices to report as paid"
@@ -82,5 +130,5 @@ def paid(*documents: str, yes: bool = False) -> None:
     if not yes and not confirm(f"Report {len(to_report)} as paid today? [y]es, [n]o: "):
         return
     for number, invoice in to_report.items():
-        event = mark_paid(invoice["id"])
+        event = _report(console, number, invoice["id"])
         console.print(f"{number}: {describe(event)}", highlight=False)

@@ -160,8 +160,17 @@ the record of what was sent.
   it with SuperPDP, previews it (buyer, electronic address, total) and sends it
   once confirmed. It then waits a few seconds for SuperPDP to process it and
   moves its PDF to `archive/`, under the year of its date, unless SuperPDP
-  found it invalid. It refuses an invoice whose number SuperPDP already has,
-  unless SuperPDP found it invalid, so it is safe to run again. `--yes` sends without asking.
+  found it invalid. If SuperPDP does not confirm receiving the invoice (timeout,
+  dropped connection, server error), it looks for it there for a minute and
+  carries on if it finds it. Otherwise the invoice may or may not have been
+  sent: SuperPDP can take a while to list it, so wait and check `invoicez
+  status` before running `send` again. Should it be sent twice, SuperPDP refuses
+  a number it already has (seen in its sandbox, not documented: see
+  [docs/superpdp-duplicates.md](docs/superpdp-duplicates.md)). `send` refuses an
+  invoice whose number SuperPDP already has, unless SuperPDP found it invalid.
+  If an interrupted sending left the PDF of such an invoice in `sendbox/`, it is
+  archived, provided that the XML in it is what SuperPDP received. `--yes` sends
+  without asking.
 - `invoicez status [--all]`: the invoices needing action, read from the
   repository and SuperPDP: those with a problem (invalid, rejected, refused,
   disputed, or failing at the administration), those the buyer's platform has
@@ -174,7 +183,8 @@ the record of what was sent.
   is the seller's job: buyers' platforms do not. Every invoice is checked
   before any is reported: credit notes, invoices SuperPDP does not have or
   found invalid, and cancelled ones are refused; those already paid are
-  skipped. `--yes` reports without asking.
+  skipped. If SuperPDP does not confirm a payment, it checks for a minute whether
+  it was recorded, and stops if it cannot tell. `--yes` reports without asking.
 
 Expired or revoked SuperPDP tokens are renewed on the fly.
 
