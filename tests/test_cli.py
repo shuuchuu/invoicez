@@ -652,6 +652,21 @@ def test_paid_checks_every_invoice_before_reporting(
     assert paying["paid"] == []
 
 
+def test_entrypoint_shows_errors_without_traceback(
+    monkeypatch: Any, capsys: Any
+) -> None:
+    from invoicez.cli import entrypoint
+
+    monkeypatch.setattr("sys.argv", ["invoicez", "send", "[nope]"])
+    with raises(SystemExit) as exit_:
+        entrypoint()
+
+    assert exit_.value.code == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "error: '[nope]' is neither a file nor a document number.\n"
+
+
 def test_complete_documents(working_dir: Path, capsys: Any) -> None:
     from invoicez.cli import main
 

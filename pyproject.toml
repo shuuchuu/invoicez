@@ -39,7 +39,7 @@ dev = [
 ]
 
 [project.scripts]
-invoicez = "invoicez.cli:main"
+invoicez = "invoicez.cli:entrypoint"
 
 [project.optional-dependencies]
 gcal = [

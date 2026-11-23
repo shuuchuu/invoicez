@@ -7,6 +7,7 @@ from cyclopts import App, Parameter, validators
 from rich.logging import RichHandler
 
 from invoicez import __version__
+from invoicez.exceptions import InvoicezError
 
 
 class _App(App):
@@ -65,3 +66,17 @@ def main(*args: str) -> None:
         handlers=[RichHandler(rich_tracebacks=True, tracebacks_show_locals=False)],
     )
     app(args or sys.argv[1:])
+
+
+def entrypoint() -> None:
+    """Run the command line, showing expected errors without their traceback."""
+    try:
+        main()
+    except InvoicezError as error:
+        # Imported here to keep startup fast.
+        from rich.console import Console
+        from rich.text import Text
+
+        message = Text.assemble(("error", "bold red"), f": {error}")
+        Console(stderr=True).print(message, soft_wrap=True)
+        sys.exit(1)
