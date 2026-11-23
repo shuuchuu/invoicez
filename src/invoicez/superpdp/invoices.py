@@ -8,6 +8,7 @@ from invoicez.exceptions import InvoicezError
 from invoicez.superpdp.auth import Token, get_access_token
 from invoicez.superpdp.config import ENDPOINT
 from invoicez.superpdp.errors import with_request_id
+from invoicez.superpdp.http import request
 from invoicez.superpdp.statuses import PAID
 
 API_BASE = f"{ENDPOINT}/v1.beta"
@@ -84,7 +85,8 @@ def validate_invoice(pdf_bytes: bytes) -> dict:
     """
     action = "Invoice validation"
     try:
-        response = niquests.post(
+        response = request(
+            "POST",
             f"{API_BASE}/validation_reports",
             files={"file": ("invoice.pdf", pdf_bytes)},
             timeout=TIMEOUT_SECONDS,
@@ -117,7 +119,7 @@ def _call(
     """
 
     def call(token: Token) -> niquests.Response:
-        return niquests.request(
+        return request(
             method,
             f"{API_BASE}{path}",
             headers=_auth_headers(token),

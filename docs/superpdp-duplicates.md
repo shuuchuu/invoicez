@@ -54,6 +54,9 @@ can be used again after `api:invalid` (not obtained in the sandbox).
   error. Checked on the sandbox on 2026-11-23, by sending again an invoice it had.
 - Errors give the `X-Request-ID` of the response, if there is one
   (`superpdp/errors.py`).
+- Every request is logged before it is sent, then with its answer or the lack of it
+  (`superpdp/http.py`). `invoicez log` shows them. The request of issue #1 was made
+  before there was a log.
 
 ## What to do with the answer
 
@@ -88,11 +91,11 @@ trusting either.
 
 ### 3. Can the client set the id of the request?
 
-- **Yes:** set it (a UUID) in `invoices._call`, and give it in the errors without a
-  response too: those are the ones it is for. Mind that the request is made twice when
-  the token is refused.
-- **No:** nothing to change. The time of the request (UTC) in the message of
-  `OutcomeUnknownError` would help SuperPDP find it.
+- **Yes:** set it (a UUID) in `http.request`, which every request goes through, log it
+  with the request, and give it in the errors without a response: those are the ones it
+  is for.
+- **No:** nothing to change. `invoicez log` gives the time of the request and the
+  `external_id`.
 
 ### What they found about the timeout
 
@@ -101,8 +104,8 @@ trusting either.
   they advise another value, then set `recovery.RECOVERY_WAIT_SECONDS` to go with it.
 - **Nothing found:** the times given are estimates (the request started about 60s before
   `created_at`), and the invoice was identified by matching the times of the events. Ask
-  whoever opened the issue to confirm it. If it happens again, note the time and the
-  invoice at once.
+  whoever opened the issue to confirm it. If it happens again, send them what `invoicez
+  log` shows.
 
 ## Asked in the first email, not answered nor asked again
 

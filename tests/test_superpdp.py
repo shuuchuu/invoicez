@@ -66,7 +66,6 @@ def api(monkeypatch: MonkeyPatch) -> _Api:
         fake.tokens.append(force_refresh)
         return Token(access_token=f"token{len(fake.tokens)}", expires_at=None)
 
-    monkeypatch.setattr(invoices.niquests, "post", reply)
     monkeypatch.setattr(invoices.niquests, "request", reply)
     monkeypatch.setattr(invoices, "get_access_token", get_access_token)
     return fake
@@ -213,7 +212,7 @@ def test_login_failure_means_nothing_was_sent(monkeypatch: MonkeyPatch) -> None:
         raise niquests.ReadTimeout(msg)
 
     monkeypatch.setattr(auth, "_load_cached_token", lambda: None)
-    monkeypatch.setattr(auth.niquests, "post", post)
+    monkeypatch.setattr(auth.niquests, "request", post)
     monkeypatch.setattr(
         auth,
         "load_credentials",
@@ -228,7 +227,7 @@ def test_refused_login_tells_the_request_id(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(auth, "_load_cached_token", lambda: None)
     monkeypatch.setattr(
         auth.niquests,
-        "post",
+        "request",
         lambda *_, **__: _response(401, {"error": "invalid_client"}, "a1"),
     )
     monkeypatch.setattr(

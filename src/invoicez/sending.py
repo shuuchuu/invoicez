@@ -133,7 +133,7 @@ def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) 
     msg = (
         f"{unknown}. Invoice {number} may have been sent all the same: wait a few "
         "minutes and check that SuperPDP does not have it with invoicez status "
-        "before sending it again"
+        "before sending it again. invoicez log shows the request, to tell SuperPDP"
     )
     raise InvoicezError(msg) from unknown
 

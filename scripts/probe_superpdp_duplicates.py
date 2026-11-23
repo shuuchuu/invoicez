@@ -4,10 +4,11 @@ Sends test invoices between sandbox companies (Tricatel and Burger Queen only), 
 refuses to run on a production account. The findings are in
 docs/superpdp-duplicates.md. Run it with the credentials of a sandbox company, kept
 apart from yours, in ~/.config/invoicez-sandbox/invoicez/superpdp-creds.yml (the
-cache is apart too, not to reuse a production token):
+cache and the log are apart too, not to reuse a production token nor to mix requests):
 
     XDG_CONFIG_HOME=~/.config/invoicez-sandbox \
     XDG_CACHE_HOME=~/.cache/invoicez-sandbox \
+    XDG_STATE_HOME=~/.local/state/invoicez-sandbox \
         uv run python scripts/probe_superpdp_duplicates.py
 """
 

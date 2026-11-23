@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from platformdirs import user_cache_path, user_config_path
+from platformdirs import user_cache_path, user_config_path, user_state_path
 from pydantic.dataclasses import dataclass
 from yaml import safe_load
 
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 CREDS_FILENAME = "superpdp-creds.yml"
 TOKEN_CACHE_FILENAME = "superpdp-token.json"
+LOG_FILENAME = "superpdp.log"
 
 ENDPOINT = "https://api.superpdp.tech"
 
@@ -27,6 +28,10 @@ def creds_path() -> "Path":
 
 def token_cache_path() -> "Path":
     return user_cache_path(app_name) / TOKEN_CACHE_FILENAME
+
+
+def log_path() -> "Path":
+    return user_state_path(app_name) / LOG_FILENAME
 
 
 def load_credentials() -> SuperPDPCredentials:
