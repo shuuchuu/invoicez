@@ -27,11 +27,12 @@ def pytest_configure(config: Config) -> None:
 
 @fixture(autouse=True)
 def config_dirs(tmp_path_factory: Any, monkeypatch: Any) -> Path:
-    """Keep every test away from the user's config directories.
+    """Keep every test away from the user's config and state directories.
 
     Loading the calendar moves invoicez's old Google OAuth files to schedz's
     directory, and logging in reads and writes there: on a real machine, that
-    is the user's own credentials.
+    is the user's own credentials. Requests to SuperPDP are logged in the state
+    directory.
 
     Returns:
         The directory standing for the user config root.
@@ -42,7 +43,9 @@ def config_dirs(tmp_path_factory: Any, monkeypatch: Any) -> Path:
         return root / app_name
 
     from invoicez.gcal import loading
+    from invoicez.superpdp import config
 
+    monkeypatch.setattr(config, "user_state_path", fake_user_config_path)
     monkeypatch.setattr(loading, "user_config_path", fake_user_config_path)
     try:
         from schedz import google

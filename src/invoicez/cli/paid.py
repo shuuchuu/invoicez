@@ -73,7 +73,8 @@ def _report(console: Console, number: str, invoice_id: int) -> dict:
         return found
     msg = (
         f"{unknown}. {number} may be reported as paid all the same: wait a few minutes "
-        "before running invoicez paid again, which skips the invoices already paid"
+        "before running invoicez paid again, which skips the invoices already paid. "
+        "invoicez log shows the request, to tell SuperPDP"
     )
     raise InvoicezError(msg) from unknown
 

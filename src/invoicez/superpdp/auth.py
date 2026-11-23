@@ -13,6 +13,8 @@ from invoicez.superpdp.config import (
     load_credentials,
     token_cache_path,
 )
+from invoicez.superpdp.errors import with_request_id
+from invoicez.superpdp.http import request
 
 TOKEN_ENDPOINT = "/oauth2/token"
 EXPIRY_LEEWAY_SECONDS = 30
@@ -49,7 +51,8 @@ def _store_token(token: Token) -> None:
 def _request_token() -> Token:
     creds = load_credentials()
     try:
-        response = niquests.post(
+        response = request(
+            "POST",
             f"{ENDPOINT}{TOKEN_ENDPOINT}",
             data={
                 "grant_type": "client_credentials",
@@ -61,7 +64,7 @@ def _request_token() -> Token:
         response.raise_for_status()
         body = response.json()
     except niquests.RequestException as error:
-        msg = f"SuperPDP login failed: {error}"
+        msg = with_request_id(f"SuperPDP login failed: {error}", error.response)
         raise InvoicezError(msg) from error
     expires_in = body.get("expires_in")
     expires_at = time.time() + expires_in if expires_in is not None else None

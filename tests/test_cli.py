@@ -19,7 +19,7 @@ from invoicez.cancellation import resolve_cancellation
 from invoicez.exceptions import InvoicezError
 from invoicez.paths import Paths
 from invoicez.superpdp import recovery
-from invoicez.superpdp.invoices import OutcomeUnknownError
+from invoicez.superpdp.invoices import DuplicateInvoiceError, OutcomeUnknownError
 from invoicez.variables import Variables
 
 DATA_DIR = Path(__file__).parent / __name__
@@ -690,6 +690,69 @@ def test_send_does_not_replace_archived_invoices(
 
     assert archived.read_bytes() == b"as sent"
     assert (working_dir / _SENDBOX_PDF).is_file()
+
+
+@fixture
+def duplicate(interrupted: dict[str, Any]) -> dict[str, Any]:
+    """Have SuperPDP refuse an invoice it has, but did not list before.
+
+    Returns:
+        The state of the fake SuperPDP.
+    """
+    interrupted["answer"] = "y"
+    interrupted["sent"] = interrupted["sent_after"] = []
+    interrupted["send_error"] = DuplicateInvoiceError("déjà existante (id 7)", 7)
+    return interrupted
+
+
+def test_send_archives_invoices_refused_as_already_sent(
+    working_dir: Path, duplicate: dict[str, Any], capsys: Any
+) -> None:
+    from invoicez.cli.send import send
+
+    send(_NUMBER)
+
+    assert duplicate["external_ids"] == [_NUMBER]
+    assert (working_dir / _ARCHIVED_PDF).is_file()
+    assert not (working_dir / _SENDBOX_PDF).exists()
+    output = capsys.readouterr().out
+    assert "It is this invoice, sent by an earlier attempt" in output
+    assert "sent with SuperPDP id 7: Émise par la plateforme" in output
+
+
+@mark.parametrize(
+    "original,message",
+    [
+        (b"<other/>", "Its content is not that of this invoice"),
+        (InvoicezError("down"), "could not be checked: down"),
+    ],
+)
+def test_send_does_not_archive_invoices_refused_for_another(
+    working_dir: Path, duplicate: dict[str, Any], original: Any, message: str
+) -> None:
+    from invoicez.cli.send import send
+
+    duplicate["original"] = original
+    with raises(InvoicezError, match=rf"déjà existante \(id 7\)\. .*{message}$"):
+        send(_NUMBER)
+
+    assert (working_dir / _SENDBOX_PDF).is_file()
+    assert not (working_dir / "archive").exists()
+
+
+def test_send_leaves_invoices_refused_as_found_invalid_in_sendbox(
+    working_dir: Path, duplicate: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    # Sent again unchanged, after SuperPDP found it invalid.
+    duplicate["sent"] = [_listed(7, "api:invalid")]
+    duplicate["events"] = [_event("api:invalid")]
+    with raises(InvoicezError, match="found invoice 2020-10-001 invalid"):
+        send(_NUMBER)
+
+    assert (working_dir / _SENDBOX_PDF).is_file()
+    assert not (working_dir / "archive").exists()
 
 
 def _sent(number: str, issue_date: str, *codes: str) -> dict[str, Any]:

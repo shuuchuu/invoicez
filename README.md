@@ -165,8 +165,9 @@ the record of what was sent.
   carries on if it finds it. Otherwise the invoice may or may not have been
   sent: SuperPDP can take a while to list it, so wait and check `invoicez
   status` before running `send` again. Should it be sent twice, SuperPDP refuses
-  a number it already has (seen in its sandbox, not documented: see
-  [docs/superpdp-duplicates.md](docs/superpdp-duplicates.md)). `send` refuses an
+  a number it already has with the same date, so do not change the date (see
+  [docs/superpdp-duplicates.md](docs/superpdp-duplicates.md)): `send` then carries
+  on with the invoice SuperPDP has, provided that its XML is the same. `send` refuses an
   invoice whose number SuperPDP already has, unless SuperPDP found it invalid.
   If an interrupted sending left the PDF of such an invoice in `sendbox/`, it is
   archived, provided that the XML in it is what SuperPDP received. `--yes` sends
@@ -185,6 +186,15 @@ the record of what was sent.
   found invalid, and cancelled ones are refused; those already paid are
   skipped. If SuperPDP does not confirm a payment, it checks for a minute whether
   it was recorded, and stops if it cannot tell. `--yes` reports without asking.
+
+- `invoicez log [SEARCH] [--all] [--limit 20]`: the requests made to SuperPDP that
+  create something or failed, with their time (UTC), duration, status and
+  `X-Request-ID`: what SuperPDP needs to look into a problem. `SEARCH` shows every
+  request mentioning it (the number of an invoice, its SuperPDP id, a date...), and
+  `--all` those that only read too. They are kept in `superpdp.log`, in the user
+  state directory (`~/.local/state/invoicez/` on Linux), readable by you only and
+  limited to about 4 MB. It holds no credentials and no content of invoices, other
+  than what the error messages of SuperPDP quote.
 
 Expired or revoked SuperPDP tokens are renewed on the fly.
 
