@@ -16,7 +16,7 @@ dependencies = [
   "schedz >= 0.1",
 ]
 description = "Tool to handle invoices."
-homepage = "https://codeberg.org/shuuchuu/invoicez"
+homepage = "https://github.com/shuuchuu/invoicez"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 name = "invoicez"
