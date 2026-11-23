@@ -9,6 +9,8 @@ from datetime import datetime
 PAID = "fr:212"
 CANCELLED = "fr:220"
 INVALID = "api:invalid"
+# By the platforms: the buyer refusing an invoice (fr:210) is something else.
+_REJECTED = frozenset({"api:rejected", "fr:213"})
 _PROBLEMS = frozenset({INVALID, "api:rejected", "fr:207", "fr:210", "fr:213", "fr:501"})
 # Handed to the buyer's platform.
 _EMITTED = frozenset({"fr:201", "api:sent"})
@@ -50,6 +52,12 @@ def latest_event(invoice: dict) -> dict | None:
 
 def has_status(invoice: dict, code: str) -> bool:
     return any(event["status_code"] == code for event in invoice.get("events") or [])
+
+
+def was_rejected(invoice: dict) -> bool:
+    return any(
+        event["status_code"] in _REJECTED for event in invoice.get("events") or []
+    )
 
 
 def problems(invoice: dict) -> list[dict]:

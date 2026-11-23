@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from shutil import copytree, which
@@ -198,6 +199,35 @@ def test_generate_xml(document_path: Path) -> None:
 
     assert xml_bytes is not None
     assert (paths.build_dir / document_path.with_suffix(".xml").name).exists()
+
+
+def _siren(root: ElementTree.Element, party: str) -> tuple[str | None, str | None]:
+    siren = root.find(
+        f".//ram:{party}TradeParty/ram:SpecifiedLegalOrganization/ram:ID", NS
+    )
+    assert siren is not None
+    return siren.text, siren.get("schemeID")
+
+
+@mark.parametrize(
+    "document_path,buyer",
+    [
+        (Path("company1/2020-10-001-Company.yml"), "666666666"),
+        (Path("company2/2020-10-003-Entreprise client.yml"), "123456789"),
+        (Path("tricatel/2020-11-001-Tricatel.yml"), "000000001"),
+    ],
+)
+def test_xml_has_the_sirens(document_path: Path, buyer: str) -> None:
+    # Factur-x 6.8 left out that of the buyer, whose invoices were then rejected.
+    paths = Paths()
+    global_data = safe_load(paths.variables.read_text(encoding="utf8"))
+    document_data = safe_load(document_path.read_text(encoding="utf8"))
+    document_data = resolve_cancellation(document_data, paths.git_dir)
+    variables = Variables.from_mappings(global_data, document_data)
+
+    root = ElementTree.fromstring(build_xml("sirens", variables, paths.build_dir))
+    assert _siren(root, "Seller") == ("000000002", "0002")
+    assert _siren(root, "Buyer") == (buyer, "0002")
 
 
 def _xml_due_date(document_data: dict[str, Any]) -> str | None:
@@ -492,6 +522,50 @@ def test_send_reports_problems_after_archiving(
 _NUMBER = "2020-10-001"
 
 
+@mark.parametrize(
+    "party,term", [("SellerTradeParty", "BT-30"), ("BuyerTradeParty", "BT-47")]
+)
+@mark.parametrize(
+    "spoiled",
+    [
+        # Without the group, with another scheme, and not a SIREN.
+        (r"<ram:SpecifiedLegalOrganization>.*?</ram:SpecifiedLegalOrganization>", ""),
+        (r'(<ram:SpecifiedLegalOrganization>\s*<ram:ID schemeID=)"0002"', r'\1"0009"'),
+        (
+            r"(<ram:SpecifiedLegalOrganization>\s*<ram:ID[^>]*>)[0-9]+",
+            r"\g<1>12345678900011",
+        ),
+    ],
+)
+def test_send_refuses_invoices_without_sirens(
+    working_dir: Path,
+    superpdp: dict[str, Any],
+    monkeypatch: Any,
+    party: str,
+    term: str,
+    spoiled: tuple[str, str],
+) -> None:
+    from invoicez import sending
+    from invoicez.cli.send import send
+
+    def get_spoiled_xml(pdf_bytes: bytes) -> tuple[str, bytes]:
+        name, xml = get_xml_from_pdf(pdf_bytes)
+        assert isinstance(name, str)
+        assert isinstance(xml, bytes)
+        before, start, rest = xml.decode().partition(f"<ram:{party}>")
+        inside, end, after = rest.partition(f"</ram:{party}>")
+        inside, count = re.subn(*spoiled, inside, flags=re.DOTALL)
+        assert count == 1
+        return name, "".join((before, start, inside, end, after)).encode()
+
+    monkeypatch.setattr(sending, "get_xml_from_pdf", get_spoiled_xml)
+    with raises(InvoicezError, match=rf"no valid SIREN .*\({term}\)"):
+        send(_NUMBER, validate=False)
+
+    assert superpdp["external_ids"] == []
+    assert (working_dir / _SENDBOX_PDF).is_file()
+
+
 def _listed(id_: int, *codes: str, **extra: Any) -> dict[str, Any]:
     return {
         "id": id_,
@@ -740,14 +814,16 @@ def test_send_does_not_archive_invoices_refused_for_another(
     assert not (working_dir / "archive").exists()
 
 
+@mark.parametrize("status_error", [None, InvoicezError("down")])
 def test_send_leaves_invoices_refused_as_found_invalid_in_sendbox(
-    working_dir: Path, duplicate: dict[str, Any]
+    working_dir: Path, duplicate: dict[str, Any], status_error: Exception | None
 ) -> None:
     from invoicez.cli.send import send
 
     # Sent again unchanged, after SuperPDP found it invalid.
     duplicate["sent"] = [_listed(7, "api:invalid")]
     duplicate["events"] = [_event("api:invalid")]
+    duplicate["status_error"] = status_error
     with raises(InvoicezError, match="found invoice 2020-10-001 invalid"):
         send(_NUMBER)
 
@@ -839,6 +915,48 @@ def test_status_fails_on_problems(monkeypatch: Any, capsys: Any) -> None:
     rows = _rows(capsys.readouterr().out)
     assert rows[0][:2] == ["problem", "2020-10-001"]
     assert rows[0][4] == "fr:210 (fr:210)"
+
+
+def _rejected(external_id: str | None) -> dict[str, Any]:
+    # SuperPDP gives no number for these.
+    return {
+        "id": 99,
+        "external_id": external_id,
+        "en_invoice": None,
+        "events": [_event("api:uploaded"), _event("fr:213", at=1)],
+    }
+
+
+def test_status_shows_rejected_invoices_as_problems(
+    monkeypatch: Any, capsys: Any
+) -> None:
+    sent = [_sent("2020-10-001", "2020-10-07", "fr:203"), _rejected("2020-10-003")]
+    assert _status(monkeypatch, sent) == 1
+    rows = _rows(capsys.readouterr().out)
+    assert rows[0][:4] == ["problem", "2020-10-003", "2020-10-18", "company2"]
+
+
+def test_status_hides_rejected_invoices_without_a_document(
+    monkeypatch: Any, capsys: Any
+) -> None:
+    sent = [_rejected("2020-10-099"), _rejected(None)]
+    assert _status(monkeypatch, sent) == 0
+    output = capsys.readouterr().out
+    assert "2020-10-099" not in output
+    # Nothing tells when the first invoice was sent.
+    assert ["not sent", "2020-10-001"] in [row[:2] for row in _rows(output)]
+
+    assert _status(monkeypatch, sent, "--all") == 1
+    assert ["problem", "2020-10-099", ""] in [
+        row[:3] for row in _rows(capsys.readouterr().out)
+    ]
+
+
+def test_status_prefers_the_invoice_sent_again(monkeypatch: Any, capsys: Any) -> None:
+    sent = [_rejected("2020-10-001"), _sent("2020-10-001", "2020-10-07", "fr:203")]
+    assert _status(monkeypatch, sent) == 0
+    rows = [row[:2] for row in _rows(capsys.readouterr().out)]
+    assert ["awaiting payment", "2020-10-001"] in rows
 
 
 def test_status_ignores_problems_of_invoices_cancelled_by_credit_note(
@@ -941,6 +1059,7 @@ def test_paid_yes_does_not_ask(
         ((), "2020-10-001", "2020-10-001 was not sent through SuperPDP"),
         (("api:invalid",), "2020-10-001", "2020-10-001 was not sent through"),
         (("fr:203", "fr:220"), "2020-10-001", "2020-10-001 is cancelled on SuperPDP"),
+        (("fr:213",), "2020-10-001", "2020-10-001 was rejected"),
         (("fr:203",), "2020-10-003", "2020-10-003 is a credit note"),
     ],
 )
@@ -959,6 +1078,18 @@ def test_paid_checks_every_invoice_before_reporting(
         paying["sent"].append(_sent_with_id(7, number, *codes))
     with raises(InvoicezError, match=message):
         paid("2020-10-002", number)
+
+    assert paying["paid"] == []
+
+
+def test_paid_refuses_rejected_invoices_without_a_number(
+    working_dir: Path, paying: dict[str, Any]
+) -> None:
+    from invoicez.cli.paid import paid
+
+    paying["sent"] = [_rejected("2020-10-001")]
+    with raises(InvoicezError, match="2020-10-001 was rejected"):
+        paid("2020-10-001")
 
     assert paying["paid"] == []
 

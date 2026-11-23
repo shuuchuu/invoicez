@@ -1,4 +1,6 @@
+import re
 import time
+from collections.abc import Mapping
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -39,6 +41,11 @@ from invoicez.variables import Variables
 STATUS_WAIT_SECONDS = 10.0
 STATUS_POLL_SECONDS = 1.0
 
+_RAM = (
+    "{urn:un:unece:uncefact:data:standard:"
+    "ReusableAggregateBusinessInformationEntity:100}"
+)
+
 
 def confirm(prompt: str) -> bool:
     try:
@@ -54,6 +61,39 @@ def _is_invoice(invoice: dict, number: str) -> bool:
 def _status(invoice: dict) -> str:
     latest = latest_event(invoice)
     return describe(latest) if latest else "no status yet"
+
+
+def _check_sirens(pdf_bytes: bytes) -> None:
+    """Check that the XML sent has the SIREN of the seller and that of the buyer.
+
+    SuperPDP takes invoices without them, then the administration rejects their data
+    (G1.63). The XML is checked rather than the document, as an older factur-x left out
+    the SIREN of the buyer.
+
+    Args:
+        pdf_bytes: PDF of the invoice.
+
+    Raises:
+        InvoicezError: If one is missing or is not a SIREN.
+    """
+    _, xml_bytes = get_xml_from_pdf(pdf_bytes)
+    if not xml_bytes:
+        msg = "The PDF has no XML: invoice not sent"
+        raise InvoicezError(msg)
+    root = ElementTree.fromstring(xml_bytes)
+    for party, term in (("Seller", "BT-30"), ("Buyer", "BT-47")):
+        path = f".//{_RAM}{party}TradeParty/{_RAM}SpecifiedLegalOrganization/{_RAM}ID"
+        siren = root.find(path)
+        if (
+            siren is None
+            or siren.get("schemeID") != "0002"
+            or not re.fullmatch(r"[0-9]{9}", siren.text or "")
+        ):
+            msg = (
+                f"The XML has no valid SIREN for the {party.lower()} ({term}), the "
+                "administration would reject it (G1.63): invoice not sent"
+            )
+            raise InvoicezError(msg)
 
 
 def _validate(console: Console, pdf_bytes: bytes) -> None:
@@ -84,7 +124,9 @@ def _preview(console: Console, variables: Variables, pdf_path: Path) -> None:
     console.print(grid)
 
 
-def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) -> dict:
+def _send(
+    console: Console, pdf_bytes: bytes, number: str, known: Mapping[int, dict]
+) -> dict:
     """Send an invoice, finding it at SuperPDP if it does not confirm receiving it.
 
     An invoice SuperPDP refuses because an earlier attempt sent it counts as sent.
@@ -93,8 +135,8 @@ def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) 
         console: Where to print.
         pdf_bytes: PDF of the invoice.
         number: Number of the invoice.
-        known_ids: SuperPDP ids of the invoices sent before, not to be mistaken for
-            this one: those found invalid share their number with the next attempt.
+        known: The invoices sent before, by SuperPDP id, not to be mistaken for this
+            one: those found invalid share their number with the next attempt.
 
     Returns:
         The invoice, with at least its SuperPDP id.
@@ -112,7 +154,8 @@ def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) 
             markup=False,
             highlight=False,
         )
-        return {"id": error.invoice_id}
+        # With its events if known, should its status not be readable.
+        return known.get(error.invoice_id, {"id": error.invoice_id})
     except OutcomeUnknownError as error:
         unknown = error
     console.print(
@@ -124,7 +167,7 @@ def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) 
 
     def find() -> dict | None:
         for invoice in list_sent_invoices():
-            if invoice["id"] not in known_ids and _is_invoice(invoice, number):
+            if invoice["id"] not in known and _is_invoice(invoice, number):
                 return invoice
         return None
 
@@ -288,7 +331,7 @@ def send_document(
 
     Raises:
         InvoicezError: If the document is a quote, was already sent and archived, is
-            invalid, SuperPDP rejects it, or may not have received it.
+            invalid or lacks a SIREN, SuperPDP rejects it, or may not have received it.
     """
     data = load_document(path, paths.git_dir)
     if data.get("quote"):
@@ -313,6 +356,7 @@ def send_document(
         paths.sendbox_dir,
     )
     pdf_bytes = pdf_path.read_bytes()
+    _check_sirens(pdf_bytes)
     if validate:
         _validate(console, pdf_bytes)
 
@@ -323,8 +367,8 @@ def send_document(
         console.print(f"Not sent, left in {relative_pdf_path}", highlight=False)
         return "skipped"
 
-    known_ids = {invoice["id"] for invoice in sent_before}
-    invoice = _wait_for_status(console, _send(console, pdf_bytes, number, known_ids))
+    known = {invoice["id"]: invoice for invoice in sent_before}
+    invoice = _wait_for_status(console, _send(console, pdf_bytes, number, known))
     console.print(
         f"Invoice {number} sent with SuperPDP id {invoice['id']}: {_status(invoice)}",
         highlight=False,

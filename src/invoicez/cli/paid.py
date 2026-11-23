@@ -9,8 +9,8 @@ from invoicez.paths import Paths
 from invoicez.sending import confirm
 from invoicez.superpdp.invoices import (
     OutcomeUnknownError,
+    by_number,
     get_invoice,
-    invoice_number,
     list_sent_invoices,
     mark_paid,
 )
@@ -20,6 +20,7 @@ from invoicez.superpdp.statuses import (
     PAID,
     describe,
     has_status,
+    was_rejected,
     was_transmitted,
 )
 
@@ -31,6 +32,9 @@ def _check(number: str, content: dict[str, Any], remote: dict | None) -> dict:
         raise InvoicezError(msg)
     if remote is None or not was_transmitted(remote):
         msg = f"{number} was not sent through SuperPDP"
+        raise InvoicezError(msg)
+    if was_rejected(remote):
+        msg = f"{number} was rejected, see invoicez status"
         raise InvoicezError(msg)
     if has_status(remote, CANCELLED):
         msg = f"{number} is cancelled on SuperPDP"
@@ -91,19 +95,15 @@ def paid(*documents: str, yes: bool = False) -> None:
 
     Raises:
         InvoicezError: If an invoice is a credit note, was not sent through
-            SuperPDP, or is cancelled there, or if reporting one fails or may have:
-            those after it are not reported.
+            SuperPDP, or is rejected or cancelled there, or if reporting one fails or
+            may have: those after it are not reported.
     """
     if not documents:
         msg = "Give the invoices to report as paid"
         raise InvoicezError(msg)
     paths = Paths()
     console = Console()
-    remote: dict[str, dict[str, Any]] = {}
-    for invoice in list_sent_invoices():
-        if (number := invoice_number(invoice)) is not None:
-            # Ids increase: an invoice sent again replaces one found invalid.
-            remote[number] = invoice
+    remote = by_number(list_sent_invoices())
 
     # By number: a document can be given both by its file and by its number.
     to_report: dict[str, dict[str, Any]] = {}

@@ -8,7 +8,7 @@ from rich.table import Table
 
 from invoicez.gcal.reconcile import iter_invoices
 from invoicez.paths import Paths
-from invoicez.superpdp.invoices import invoice_number, list_sent_invoices
+from invoicez.superpdp.invoices import by_number, list_sent_invoices
 from invoicez.superpdp.statuses import (
     CANCELLED,
     PAID,
@@ -67,6 +67,11 @@ def _state(
     return "awaiting payment", status
 
 
+def _issue_date(invoice: dict[str, Any]) -> str:
+    # Empty if SuperPDP rejected the invoice, or did not read it yet.
+    return str((invoice.get("en_invoice") or {}).get("issue_date") or "")
+
+
 def status(
     *, show_all: Annotated[bool, Parameter(name="--all", negative="")] = False
 ) -> int:
@@ -92,13 +97,9 @@ def status(
     cancelled = {
         str(content["cancels"]) for _, content in local.values() if "cancels" in content
     }
-    remote: dict[str, dict[str, Any]] = {}
-    for invoice in list_sent_invoices():
-        if (number := invoice_number(invoice)) is not None:
-            # Ids increase: an invoice sent again replaces one found invalid.
-            remote[number] = invoice
+    remote = by_number(list_sent_invoices())
     first_sent = min(
-        (str(invoice["en_invoice"].get("issue_date")) for invoice in remote.values()),
+        filter(None, (_issue_date(invoice) for invoice in remote.values())),
         default=None,
     )
 
@@ -113,8 +114,11 @@ def status(
             company = content.get("company") or cancelled_content.get("company", "")
             date = str(content.get("date"))
         else:
-            date, company = str(remote[number]["en_invoice"].get("issue_date")), ""
+            date, company = _issue_date(remote[number]), ""
         if state not in _ACTION_STATES and not show_all:
+            continue
+        # Rejected, and its document is gone, such as sent again with another number.
+        if content is None and not date and not show_all:
             continue
         if (
             state == "not sent"
