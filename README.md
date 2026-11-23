@@ -167,7 +167,9 @@ the record of what was sent.
   status` before running `send` again. Should it be sent twice, SuperPDP refuses
   a number it already has (seen in its sandbox, not documented). `send` refuses an
   invoice whose number SuperPDP already has, unless SuperPDP found it invalid.
-  `--yes` sends without asking.
+  If an interrupted sending left the PDF of such an invoice in `sendbox/`, it is
+  archived, provided that the XML in it is what SuperPDP received. `--yes` sends
+  without asking.
 - `invoicez status [--all]`: the invoices needing action, read from the
   repository and SuperPDP: those with a problem (invalid, rejected, refused,
   disputed, or failing at the administration), those the buyer's platform has

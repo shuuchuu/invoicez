@@ -170,11 +170,26 @@ def test_login_failure_means_nothing_was_sent(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_network_errors_name_the_action(api: _Api) -> None:
-    api.replies.extend([niquests.ReadTimeout("read timed out") for _ in range(2)])
+    api.replies.extend([niquests.ReadTimeout("read timed out") for _ in range(3)])
     with raises(InvoicezError, match="Listing sent invoices failed: read timed out"):
         invoices.list_sent_invoices()
     with raises(InvoicezError, match="Invoice validation failed: read timed out"):
         invoices.validate_invoice(b"")
+    with raises(InvoicezError, match="Fetching the invoice as sent failed: read"):
+        invoices.get_original_invoice(42)
+
+
+def test_get_original_invoice_returns_the_file(api: _Api) -> None:
+    api.replies.extend(
+        [
+            _response(200, b"<xml/>"),
+            _response(400, {"http_status_code": 400, "message": "unknown invoice"}),
+        ]
+    )
+    assert invoices.get_original_invoice(42) == b"<xml/>"
+    assert api.calls[0]["params"] == {"format": "original"}
+    with raises(InvoicezError, match="HTTP 400: unknown invoice"):
+        invoices.get_original_invoice(42)
 
 
 def test_refused_token_is_refreshed_once(api: _Api) -> None:

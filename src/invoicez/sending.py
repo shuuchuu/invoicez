@@ -1,8 +1,11 @@
 import time
 from datetime import date
+from io import BytesIO
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
+from xml.etree import ElementTree
 
+from facturx import get_xml_from_pdf
 from rich.console import Console
 from rich.table import Table
 from yaml import safe_load
@@ -15,6 +18,7 @@ from invoicez.runner import run as runner_run
 from invoicez.superpdp.invoices import (
     OutcomeUnknownError,
     get_invoice,
+    get_original_invoice,
     invoice_number,
     list_sent_invoices,
     send_invoice,
@@ -148,6 +152,89 @@ def _wait_for_status(console: Console, invoice: dict) -> dict:
     return invoice
 
 
+def _archive_path(paths: Paths, pdf_path: Path, data: dict[str, Any]) -> Path:
+    year = date.fromisoformat(str(data["date"])).year
+    return paths.archive_dir / str(year) / pdf_path.name
+
+
+def _archive(
+    console: Console, paths: Paths, pdf_path: Path, archive_path: Path
+) -> None:
+    archive_path.parent.mkdir(parents=True, exist_ok=True)
+    pdf_path.rename(archive_path)
+    console.print(
+        f"Archived to {archive_path.relative_to(paths.git_dir)}", highlight=False
+    )
+
+
+def _is_as_sent(pdf_path: Path, invoice_id: int) -> bool:
+    """Tell whether the XML in a PDF is the one SuperPDP was sent.
+
+    Args:
+        pdf_path: PDF of the invoice.
+        invoice_id: SuperPDP id of the invoice.
+
+    Returns:
+        Whether they are the same, but for how the XML is serialized.
+    """
+    try:
+        _, xml_bytes = get_xml_from_pdf(pdf_path.read_bytes())
+    except Exception:
+        # Damaged PDFs, such as truncated ones, make pypdf raise all sorts of errors.
+        return False
+    if not xml_bytes:
+        return False
+    original = get_original_invoice(invoice_id)
+    try:
+        return ElementTree.canonicalize(
+            from_file=BytesIO(xml_bytes)
+        ) == ElementTree.canonicalize(from_file=BytesIO(original))
+    except ElementTree.ParseError:
+        return False
+
+
+def _archive_already_sent(
+    console: Console, paths: Paths, path: Path, data: dict[str, Any], invoice: dict
+) -> None:
+    """Archive the PDF an interrupted sending left in sendbox/, if it is what was sent.
+
+    Args:
+        console: Where to print.
+        paths: Paths of the repository.
+        path: YAML file of the invoice.
+        data: Content of the invoice.
+        invoice: The invoice SuperPDP has.
+
+    Raises:
+        InvoicezError: If there is nothing to archive, or it is not what was sent.
+    """
+    msg = (
+        f"Invoice {data['document_number']} was already sent "
+        f"(SuperPDP id {invoice['id']}, {_status(invoice)})"
+    )
+    pdf_path = paths.sendbox_dir / f"{path.with_suffix('').name}.pdf"
+    archive_path = _archive_path(paths, pdf_path, data)
+    if not pdf_path.is_file() or archive_path.exists():
+        raise InvoicezError(msg)
+    relative_pdf_path = pdf_path.relative_to(paths.git_dir)
+    try:
+        as_sent = _is_as_sent(pdf_path, invoice["id"])
+    except InvoicezError as error:
+        msg += f", left {relative_pdf_path} there: {error}"
+        raise InvoicezError(msg) from error
+    if not as_sent:
+        msg += f", left {relative_pdf_path} there as it is not what was sent"
+        raise InvoicezError(msg)
+    console.print(msg, markup=False, highlight=False)
+    _archive(console, paths, pdf_path, archive_path)
+
+
+def _raise_problems(invoice: dict) -> None:
+    if issues := problems(invoice):
+        msg = "\n".join(describe(event) for event in issues)
+        raise InvoicezError(msg)
+
+
 def send_document(
     console: Console,
     paths: Paths,
@@ -156,11 +243,12 @@ def send_document(
     template: str = "main",
     validate: bool = True,
     yes: bool = False,
-) -> Literal["sent", "skipped"]:
+) -> Literal["sent", "skipped", "archived"]:
     """Build an invoice, send it via SuperPDP once confirmed, then archive its PDF.
 
     The PDF is built in sendbox/. Once sent, and unless SuperPDP finds it invalid,
-    it moves to archive/<year>/.
+    it moves to archive/<year>/. If SuperPDP already has the invoice, only its PDF
+    left in sendbox/ by an interrupted sending is archived.
 
     Args:
         console: Where to print.
@@ -171,11 +259,12 @@ def send_document(
         yes: Send without asking for confirmation.
 
     Returns:
-        "sent", or "skipped" if sending was not confirmed.
+        "sent", "skipped" if sending was not confirmed, or "archived" if it was
+        already sent and only its PDF had to be archived.
 
     Raises:
-        InvoicezError: If the document is a quote, was already sent, is invalid,
-            SuperPDP rejects it, or may not have received it.
+        InvoicezError: If the document is a quote, was already sent and archived, is
+            invalid, SuperPDP rejects it, or may not have received it.
     """
     data = load_document(path, paths.git_dir)
     if data.get("quote"):
@@ -185,11 +274,9 @@ def send_document(
     sent_before = list_sent_invoices()
     for invoice in sent_before:
         if _is_invoice(invoice, number) and was_transmitted(invoice):
-            msg = (
-                f"Invoice {number} was already sent (SuperPDP id {invoice['id']}, "
-                f"{_status(invoice)})"
-            )
-            raise InvoicezError(msg)
+            _archive_already_sent(console, paths, path, data, invoice)
+            _raise_problems(invoice)
+            return "archived"
 
     pdf_path = runner_run(
         path,
@@ -223,21 +310,13 @@ def send_document(
         msg = f"SuperPDP found invoice {number} invalid, left in {relative_pdf_path}"
         raise InvoicezError(msg)
 
-    year = date.fromisoformat(str(data["date"])).year
-    archive_path = paths.archive_dir / str(year) / pdf_path.name
+    archive_path = _archive_path(paths, pdf_path, data)
     if archive_path.exists():
         msg = (
             f"{archive_path.relative_to(paths.git_dir)} already exists, "
             f"left the sent invoice in {relative_pdf_path}"
         )
         raise InvoicezError(msg)
-    archive_path.parent.mkdir(parents=True, exist_ok=True)
-    pdf_path.rename(archive_path)
-    console.print(
-        f"Archived to {archive_path.relative_to(paths.git_dir)}", highlight=False
-    )
-
-    if issues := problems(invoice):
-        msg = "\n".join(describe(event) for event in issues)
-        raise InvoicezError(msg)
+    _archive(console, paths, pdf_path, archive_path)
+    _raise_problems(invoice)
     return "sent"

@@ -212,6 +212,31 @@ def get_invoice(invoice_id: int) -> dict:
     return _request("GET", f"/invoices/{invoice_id}", "Fetching the invoice")
 
 
+def get_original_invoice(invoice_id: int) -> bytes:
+    """Return the file an invoice was sent as, unmodified.
+
+    Args:
+        invoice_id: SuperPDP id of the invoice.
+
+    Returns:
+        The file: XML for the invoices sent by send_invoice.
+
+    Raises:
+        InvoicezError: If SuperPDP cannot be reached or answers with an error.
+    """
+    action = "Fetching the invoice as sent"
+    try:
+        response = _call(
+            "GET", f"/invoices/{invoice_id}", params={"format": "original"}
+        )
+    except niquests.RequestException as error:
+        raise InvoicezError(_network_message(action, error)) from error
+    if not response.ok:
+        # Raises, with the message of SuperPDP.
+        _json_or_raise(response, action)
+    return response.content or b""
+
+
 def mark_paid(invoice_id: int) -> dict:
     """Report a sent invoice as paid in full (fr:212, Encaissée), as of now.
 

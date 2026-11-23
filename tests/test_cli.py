@@ -318,7 +318,8 @@ def superpdp(monkeypatch: Any) -> dict[str, Any]:
         "events" are those of an invoice once sent, "answer" is the reply to the
         confirmation, and "external_ids" lists those of the invoices sent. Sending
         raises "send_error" if set, after which "sent_after" is what SuperPDP has,
-        and reading a status raises "status_error" if set.
+        and reading a status raises "status_error" if set. "original" is the file
+        SuperPDP was sent, or the error fetching it raises.
     """
     from invoicez import sending
 
@@ -333,6 +334,7 @@ def superpdp(monkeypatch: Any) -> dict[str, Any]:
         "send_error": None,
         "sent_after": None,
         "status_error": None,
+        "original": None,
     }
 
     def send_invoice(_: bytes, *, external_id: str) -> dict[str, Any]:
@@ -352,7 +354,13 @@ def superpdp(monkeypatch: Any) -> dict[str, Any]:
             raise state["status_error"]
         return {"id": id_, "events": state["events"]}
 
+    def get_original_invoice(_: int) -> bytes:
+        if isinstance(state["original"], Exception):
+            raise state["original"]
+        return state["original"]
+
     monkeypatch.setattr(sending, "list_sent_invoices", list_sent_invoices)
+    monkeypatch.setattr(sending, "get_original_invoice", get_original_invoice)
     monkeypatch.setattr(
         sending, "validate_invoice", lambda _: {"data": [{"is_valid": True}]}
     )
@@ -589,6 +597,99 @@ def test_send_archives_when_the_status_cannot_be_read(
     output = capsys.readouterr().out
     assert "its status could not be read" in output
     assert "sent with SuperPDP id 42" in output
+
+
+@fixture
+def interrupted(working_dir: Path, superpdp: dict[str, Any]) -> dict[str, Any]:
+    """Leave in sendbox/ the PDF of an invoice SuperPDP has.
+
+    Returns:
+        The state of the fake SuperPDP.
+    """
+    from invoicez.cli.send import send
+
+    superpdp["answer"] = "n"
+    send(_NUMBER)
+    superpdp["sent"] = [_listed(7, "fr:203")]
+    _, superpdp["original"] = get_xml_from_pdf(
+        (working_dir / _SENDBOX_PDF).read_bytes()
+    )
+    return superpdp
+
+
+def test_send_archives_what_an_interrupted_sending_left(
+    working_dir: Path, interrupted: dict[str, Any], capsys: Any
+) -> None:
+    from invoicez.cli.send import send
+
+    left = (working_dir / _SENDBOX_PDF).read_bytes()
+    send(_NUMBER)
+
+    assert (working_dir / _ARCHIVED_PDF).read_bytes() == left
+    assert not (working_dir / _SENDBOX_PDF).exists()
+    assert interrupted["external_ids"] == []
+    assert "already sent (SuperPDP id 7" in capsys.readouterr().out
+
+
+def test_send_reports_problems_of_what_an_interrupted_sending_left(
+    working_dir: Path, interrupted: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    interrupted["sent"] = [_listed(7, "fr:213")]
+    with raises(InvoicezError, match=r"^fr:213 \(fr:213\)$"):
+        send(_NUMBER)
+
+    assert (working_dir / _ARCHIVED_PDF).is_file()
+
+
+@mark.parametrize(
+    "original,message",
+    [
+        (b"<other/>", "as it is not what was sent"),
+        (b"%PDF", "as it is not what was sent"),
+        (InvoicezError("down"), "there: down"),
+    ],
+)
+def test_send_does_not_archive_what_may_not_have_been_sent(
+    working_dir: Path, interrupted: dict[str, Any], original: Any, message: str
+) -> None:
+    from invoicez.cli.send import send
+
+    interrupted["original"] = original
+    with raises(InvoicezError, match=f"already sent .*{message}"):
+        send(_NUMBER)
+
+    assert (working_dir / _SENDBOX_PDF).is_file()
+    assert not (working_dir / "archive").exists()
+
+
+@mark.parametrize("damaged", [b"", b"%PDF-1.7 truncated"])
+def test_send_does_not_archive_damaged_pdfs(
+    working_dir: Path, interrupted: dict[str, Any], damaged: bytes
+) -> None:
+    from invoicez.cli.send import send
+
+    (working_dir / _SENDBOX_PDF).write_bytes(damaged)
+    with raises(InvoicezError, match=r"already sent .* as it is not what was sent"):
+        send(_NUMBER)
+
+    assert not (working_dir / "archive").exists()
+
+
+def test_send_does_not_replace_archived_invoices(
+    working_dir: Path, interrupted: dict[str, Any]
+) -> None:
+    from invoicez.cli.send import send
+
+    archived = working_dir / _ARCHIVED_PDF
+    archived.parent.mkdir(parents=True)
+    archived.write_bytes(b"as sent")
+    with raises(InvoicezError, match=r"already sent \(SuperPDP id 7, .*\)$"):
+        send(_NUMBER)
+
+    assert archived.read_bytes() == b"as sent"
+    assert (working_dir / _SENDBOX_PDF).is_file()
 
 
 def _sent(number: str, issue_date: str, *codes: str) -> dict[str, Any]:
