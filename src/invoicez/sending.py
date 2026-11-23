@@ -16,6 +16,7 @@ from invoicez.paths import Paths
 from invoicez.runner import load_document
 from invoicez.runner import run as runner_run
 from invoicez.superpdp.invoices import (
+    DuplicateInvoiceError,
     OutcomeUnknownError,
     get_invoice,
     get_original_invoice,
@@ -86,6 +87,8 @@ def _preview(console: Console, variables: Variables, pdf_path: Path) -> None:
 def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) -> dict:
     """Send an invoice, finding it at SuperPDP if it does not confirm receiving it.
 
+    An invoice SuperPDP refuses because an earlier attempt sent it counts as sent.
+
     Args:
         console: Where to print.
         pdf_bytes: PDF of the invoice.
@@ -101,6 +104,15 @@ def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) 
     """
     try:
         return send_invoice(pdf_bytes, external_id=number)
+    except DuplicateInvoiceError as error:
+        _check_is_duplicate(pdf_bytes, error)
+        console.print(
+            f"{error}\nIt is this invoice, sent by an earlier attempt",
+            style="yellow",
+            markup=False,
+            highlight=False,
+        )
+        return {"id": error.invoice_id}
     except OutcomeUnknownError as error:
         unknown = error
     console.print(
@@ -124,6 +136,17 @@ def _send(console: Console, pdf_bytes: bytes, number: str, known_ids: set[int]) 
         "before sending it again"
     )
     raise InvoicezError(msg) from unknown
+
+
+def _check_is_duplicate(pdf_bytes: bytes, duplicate: DuplicateInvoiceError) -> None:
+    try:
+        as_sent = _is_as_sent(pdf_bytes, duplicate.invoice_id)
+    except InvoicezError as error:
+        msg = f"{duplicate}. Whether it is this invoice could not be checked: {error}"
+        raise InvoicezError(msg) from error
+    if not as_sent:
+        msg = f"{duplicate}. Its content is not that of this invoice"
+        raise InvoicezError(msg) from duplicate
 
 
 def _wait_for_status(console: Console, invoice: dict) -> dict:
@@ -167,18 +190,18 @@ def _archive(
     )
 
 
-def _is_as_sent(pdf_path: Path, invoice_id: int) -> bool:
+def _is_as_sent(pdf_bytes: bytes, invoice_id: int) -> bool:
     """Tell whether the XML in a PDF is the one SuperPDP was sent.
 
     Args:
-        pdf_path: PDF of the invoice.
+        pdf_bytes: PDF of the invoice.
         invoice_id: SuperPDP id of the invoice.
 
     Returns:
         Whether they are the same, but for how the XML is serialized.
     """
     try:
-        _, xml_bytes = get_xml_from_pdf(pdf_path.read_bytes())
+        _, xml_bytes = get_xml_from_pdf(pdf_bytes)
     except Exception:
         # Damaged PDFs, such as truncated ones, make pypdf raise all sorts of errors.
         return False
@@ -218,7 +241,7 @@ def _archive_already_sent(
         raise InvoicezError(msg)
     relative_pdf_path = pdf_path.relative_to(paths.git_dir)
     try:
-        as_sent = _is_as_sent(pdf_path, invoice["id"])
+        as_sent = _is_as_sent(pdf_path.read_bytes(), invoice["id"])
     except InvoicezError as error:
         msg += f", left {relative_pdf_path} there: {error}"
         raise InvoicezError(msg) from error
@@ -259,8 +282,9 @@ def send_document(
         yes: Send without asking for confirmation.
 
     Returns:
-        "sent", "skipped" if sending was not confirmed, or "archived" if it was
-        already sent and only its PDF had to be archived.
+        "sent" (by this attempt, or by one SuperPDP had not listed yet), "skipped" if
+        sending was not confirmed, or "archived" if it was already sent and only its
+        PDF had to be archived.
 
     Raises:
         InvoicezError: If the document is a quote, was already sent and archived, is

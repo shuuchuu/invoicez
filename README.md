@@ -165,8 +165,9 @@ the record of what was sent.
   carries on if it finds it. Otherwise the invoice may or may not have been
   sent: SuperPDP can take a while to list it, so wait and check `invoicez
   status` before running `send` again. Should it be sent twice, SuperPDP refuses
-  a number it already has (seen in its sandbox, not documented: see
-  [docs/superpdp-duplicates.md](docs/superpdp-duplicates.md)). `send` refuses an
+  a number it already has with the same date, so do not change the date (see
+  [docs/superpdp-duplicates.md](docs/superpdp-duplicates.md)): `send` then carries
+  on with the invoice SuperPDP has, provided that its XML is the same. `send` refuses an
   invoice whose number SuperPDP already has, unless SuperPDP found it invalid.
   If an interrupted sending left the PDF of such an invoice in `sendbox/`, it is
   archived, provided that the XML in it is what SuperPDP received. `--yes` sends

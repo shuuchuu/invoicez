@@ -22,9 +22,13 @@ from invoicez.superpdp.statuses import (
 PDF = Path(__file__).parent / "test_cli" / "pdf" / "2020-10-001-Company.pdf"
 
 
-def _response(status_code: int, body: Any) -> niquests.Response:
+def _response(
+    status_code: int, body: Any, request_id: str | None = None
+) -> niquests.Response:
     response = niquests.Response()
     response.status_code = status_code
+    if request_id is not None:
+        response.headers["x-request-id"] = request_id
     response._content = (  # ruff: ignore[private-member-access]
         body if isinstance(body, bytes) else json.dumps(body).encode()
     )
@@ -97,6 +101,57 @@ def test_send_invoice_raises_on_non_json_error(api: _Api) -> None:
         invoices.send_invoice(PDF.read_bytes())
 
 
+def test_errors_tell_the_request_id(api: _Api) -> None:
+    api.replies.extend(
+        [
+            _response(400, {"http_status_code": 400, "message": "invalid buyer"}, "a1"),
+            _response(502, b"<html>Bad Gateway</html>", "b2"),
+            _response(200, {"created_at": "now"}, "c3"),
+            _response(200, b"not JSON", "d4"),
+        ]
+    )
+    with raises(InvoicezError, match=r"invalid buyer \(X-Request-ID: a1\)$"):
+        invoices.send_invoice(PDF.read_bytes())
+    for request_id in ("b2", "c3"):
+        with raises(
+            invoices.OutcomeUnknownError, match=rf"\(X-Request-ID: {request_id}\)$"
+        ):
+            invoices.send_invoice(PDF.read_bytes())
+    with raises(InvoicezError, match=r"\(X-Request-ID: d4\)$"):
+        invoices.get_invoice(42)
+
+
+def test_send_invoice_tells_which_invoice_is_a_duplicate(api: _Api) -> None:
+    message = "La facture est déjà existante (id 2294443)"
+    api.replies.append(
+        _response(400, {"http_status_code": 400, "message": message}, "a1")
+    )
+    with raises(invoices.DuplicateInvoiceError, match="déjà existante") as error:
+        invoices.send_invoice(PDF.read_bytes())
+    assert error.value.invoice_id == 2294443
+    assert "X-Request-ID: a1" in error.value.message
+
+
+@mark.parametrize(
+    "status_code,message,expected",
+    [
+        # No id to go on with.
+        (400, "La facture est déjà existante", InvoicezError),
+        # Server errors do not tell what was done.
+        (500, "La facture est déjà existante (id 7)", invoices.OutcomeUnknownError),
+    ],
+)
+def test_send_invoice_does_not_guess_duplicates(
+    api: _Api, status_code: int, message: str, expected: type[InvoicezError]
+) -> None:
+    api.replies.append(
+        _response(status_code, {"http_status_code": status_code, "message": message})
+    )
+    with raises(InvoicezError) as error:
+        invoices.send_invoice(PDF.read_bytes())
+    assert type(error.value) is expected
+
+
 def test_send_invoice_passes_external_id(api: _Api) -> None:
     api.replies.append(_response(200, {"id": 42}))
     invoices.send_invoice(PDF.read_bytes(), external_id="2020-10-001")
@@ -167,6 +222,22 @@ def test_login_failure_means_nothing_was_sent(monkeypatch: MonkeyPatch) -> None:
     with raises(InvoicezError, match="login failed: read timed out") as error:
         invoices.send_invoice(PDF.read_bytes())
     assert not isinstance(error.value, invoices.OutcomeUnknownError)
+
+
+def test_refused_login_tells_the_request_id(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(auth, "_load_cached_token", lambda: None)
+    monkeypatch.setattr(
+        auth.niquests,
+        "post",
+        lambda *_, **__: _response(401, {"error": "invalid_client"}, "a1"),
+    )
+    monkeypatch.setattr(
+        auth,
+        "load_credentials",
+        lambda: SuperPDPCredentials(client_id="id", client_secret="secret"),
+    )
+    with raises(InvoicezError, match=r"login failed: .*\(X-Request-ID: a1\)$"):
+        auth.get_access_token()
 
 
 def test_network_errors_name_the_action(api: _Api) -> None:

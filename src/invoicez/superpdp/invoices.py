@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import niquests
@@ -6,6 +7,7 @@ from facturx import get_xml_from_pdf
 from invoicez.exceptions import InvoicezError
 from invoicez.superpdp.auth import Token, get_access_token
 from invoicez.superpdp.config import ENDPOINT
+from invoicez.superpdp.errors import with_request_id
 from invoicez.superpdp.statuses import PAID
 
 API_BASE = f"{ENDPOINT}/v1.beta"
@@ -16,9 +18,20 @@ TIMEOUT_SECONDS = 30
 # and has been seen taking a minute.
 CREATE_TIMEOUT_SECONDS = 120
 
+# How SuperPDP refuses an invoice it already has: there is no code for it.
+_DUPLICATE_MESSAGE = re.compile(r"déjà existante \(id (\d+)\)")
+
 
 class OutcomeUnknownError(InvoicezError):
     """SuperPDP got a request creating something, and may have carried it out."""
+
+
+class DuplicateInvoiceError(InvoicezError):
+    """SuperPDP refused an invoice, having one of the same seller, number and date."""
+
+    def __init__(self, message: str, invoice_id: int):
+        super().__init__(message)
+        self.invoice_id = invoice_id
 
 
 def _auth_headers(token: Token) -> dict[str, str]:
@@ -50,10 +63,10 @@ def _json_or_raise(response: niquests.Response, action: str) -> dict:
         msg = f"{action} failed with HTTP {response.status_code}"
         if isinstance(body, dict) and body.get("message"):
             msg += f": {body['message']}"
-        raise InvoicezError(msg)
+        raise InvoicezError(with_request_id(msg, response))
     if not isinstance(body, dict):
         msg = f"{action} returned an unexpected body: {response.text!r}"
-        raise InvoicezError(msg)
+        raise InvoicezError(with_request_id(msg, response))
     return body
 
 
@@ -172,7 +185,7 @@ def _create(path: str, action: str, **kwargs: Any) -> dict:
         raise OutcomeUnknownError(error.message) from error
     if "id" not in created:
         msg = f"{action} returned no id: {response.text!r}"
-        raise OutcomeUnknownError(msg)
+        raise OutcomeUnknownError(with_request_id(msg, response))
     return created
 
 
@@ -265,11 +278,24 @@ def send_invoice(pdf_bytes: bytes, *, external_id: str | None = None) -> dict:
 
     Returns:
         The created invoice, as returned by the API endpoint.
+
+    Raises:
+        DuplicateInvoiceError: If SuperPDP already has it.
+        OutcomeUnknownError: If it may have been sent.
+        InvoicezError: If it was not sent.
     """
     _, xml_bytes = get_xml_from_pdf(pdf_bytes)
-    return _create(
-        "/invoices",
-        "Invoice sending",
-        params={"external_id": external_id} if external_id else None,
-        data=xml_bytes,
-    )
+    try:
+        return _create(
+            "/invoices",
+            "Invoice sending",
+            params={"external_id": external_id} if external_id else None,
+            data=xml_bytes,
+        )
+    except OutcomeUnknownError:
+        raise
+    except InvoicezError as error:
+        match = _DUPLICATE_MESSAGE.search(error.message)
+        if match is None:
+            raise
+        raise DuplicateInvoiceError(error.message, int(match[1])) from error
