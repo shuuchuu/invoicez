@@ -120,6 +120,8 @@ hasty retry can make report twice.
 
 ## Known and not fixed
 
+Plans are in [open-points.md](open-points.md).
+
 - `status`, `paid` and `ledger` find invoices by number, or by `external_id` for those
   SuperPDP rejected (`invoices.by_number`). Those rejected without an `external_id`
   cannot be told apart, so `status` still shows them as not sent.
