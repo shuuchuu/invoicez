@@ -1,4 +1,5 @@
 import re
+from collections.abc import Iterable
 from typing import Any
 
 import niquests
@@ -213,6 +214,26 @@ def list_sent_invoices() -> list[dict]:
 
 def invoice_number(invoice: dict) -> str | None:
     return (invoice.get("en_invoice") or {}).get("number")
+
+
+def by_number(invoices: Iterable[dict]) -> dict[str, dict]:
+    """Return invoices sent through SuperPDP by number.
+
+    SuperPDP gives no number for those it rejected or did not read yet: they are found
+    by the external_id they were sent with, if any.
+
+    Args:
+        invoices: The invoices, by increasing id.
+
+    Returns:
+        The latest invoice of each number: one sent again replaces one found invalid.
+    """
+    found: dict[str, dict] = {}
+    for invoice in invoices:
+        number = invoice_number(invoice) or invoice.get("external_id")
+        if number:
+            found[number] = invoice
+    return found
 
 
 def get_invoice(invoice_id: int) -> dict:

@@ -18,7 +18,7 @@ from invoicez.exceptions import InvoicezError
 from invoicez.gcal.reconcile import iter_invoices
 from invoicez.ledger.settings import LedgerSettings
 from invoicez.ledger.spreadsheet import Row, read_sheets
-from invoicez.superpdp.invoices import invoice_number
+from invoicez.superpdp.invoices import by_number
 from invoicez.superpdp.statuses import emitted_at, paid_at
 from invoicez.variables import InvoiceLine, Variables
 
@@ -264,12 +264,7 @@ def load_entries(
         for number, day in dates.items()
         if settings.pivot_date is None or day >= settings.pivot_date
     )
-    remote: dict[str, dict[str, Any]] = {}
-    if recent:
-        for invoice in list_sent():
-            if (number := invoice_number(invoice)) is not None:
-                # Ids increase: an invoice sent again replaces one found invalid.
-                remote[number] = invoice
+    remote = by_number(list_sent()) if recent else {}
     warnings: list[tuple[Entry, str]] = []
     for number in recent:
         path, content = documents[number]

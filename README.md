@@ -156,9 +156,10 @@ is run from:
 `build/` and `sendbox/` are generated and can be ignored by git; `archive/` is
 the record of what was sent.
 
-- `invoicez send DOCUMENT [--yes]`: builds the invoice in `sendbox/`, validates
-  it with SuperPDP, previews it (buyer, electronic address, total) and sends it
-  once confirmed. It then waits a few seconds for SuperPDP to process it and
+- `invoicez send DOCUMENT [--yes]`: builds the invoice in `sendbox/`, checks that
+  its XML has the SIREN of the seller and that of the buyer, which SuperPDP does not
+  require but the administration does, validates it with SuperPDP, previews it
+  (buyer, electronic address, total) and sends it once confirmed. It then waits a few seconds for SuperPDP to process it and
   moves its PDF to `archive/`, under the year of its date, unless SuperPDP
   found it invalid. If SuperPDP does not confirm receiving the invoice (timeout,
   dropped connection, server error), it looks for it there for a minute and
@@ -177,13 +178,14 @@ the record of what was sent.
   disputed, or failing at the administration), those the buyer's platform has
   not confirmed receiving two days after SuperPDP handed them over (`not
   delivered?`), those not sent yet, and those awaiting payment. Invoices dated before the first one SuperPDP has are taken
-  as sent before it. Invoices cancelled by a credit note are left out. Exits
-  with 1 on a problem.
+  as sent before it. Invoices cancelled by a credit note are left out. SuperPDP gives
+  no number for those it rejected: they are recognised if sent by invoicez 6.0.0 or
+  later, and left out once no document has their number. Exits with 1 on a problem.
 - `invoicez paid DOCUMENT... [--yes]`: reports invoices sent via SuperPDP as
   paid in full today (`fr:212`, Encaissée), once confirmed. Reporting payments
   is the seller's job: buyers' platforms do not. Every invoice is checked
   before any is reported: credit notes, invoices SuperPDP does not have or
-  found invalid, and cancelled ones are refused; those already paid are
+  found invalid, and rejected or cancelled ones are refused; those already paid are
   skipped. If SuperPDP does not confirm a payment, it checks for a minute whether
   it was recorded, and stops if it cannot tell. `--yes` reports without asking.
 

@@ -86,7 +86,7 @@ trusting either.
 - **No for `api:invalid`:** do not just make `was_transmitted` return True, as `send`
   would then archive the PDF of the invalid invoice as already sent, and `paid` would
   accept it. Make `send` refuse with a message saying to use a new number, drop "unless
-  SuperPDP found it invalid" from the README, and drop `known_ids` from `sending._send`.
+  SuperPDP found it invalid" from the README, and drop `known` from `sending._send`.
   `test_send_again_invoices_found_invalid` says the opposite of what is then wanted.
 
 ### 3. Can the client set the id of the request?
@@ -120,9 +120,11 @@ hasty retry can make report twice.
 
 ## Known and not fixed
 
-- `status`, `paid` and `ledger` find invoices by number only, so `status` shows those
-  SuperPDP rejected (without `en_invoice`) as not sent. `status` also reads `issue_date`
-  from `en_invoice`, so falling back on `external_id` in `invoice_number` is not enough.
+Plans are in [open-points.md](open-points.md).
+
+- `status`, `paid` and `ledger` find invoices by number, or by `external_id` for those
+  SuperPDP rejected (`invoices.by_number`). Those rejected without an `external_id`
+  cannot be told apart, so `status` still shows them as not sent.
 - The refusal of duplicates does not cover another date: `send` compares the number
   only, but cannot see an invoice SuperPDP does not list yet. Changing the date between
   two attempts could thus send the invoice twice.
